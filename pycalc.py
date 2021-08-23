@@ -1,8 +1,7 @@
-from planny import ERROR_MSG
-import sys,os
+import sys
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QStatusBar, QToolBar
+from PyQt5.QtWidgets import QApplication, QGridLayout, QLineEdit, QMainWindow
 from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
 from functools import partial
 ERROR_MSG='ERROR'
@@ -15,7 +14,7 @@ class PyCalcUi(QMainWindow):
         self.setWindowTitle('PyCalc')
         self.setFixedSize(235,235)
         self._centralWidget = QWidget(self)
-        self.setCentralWidget((self._centralWidget))
+        self.setCentralWidget(self._centralWidget)
         # layout
         self.generalLayout = QVBoxLayout()
         self._centralWidget.setLayout(self.generalLayout)
@@ -100,7 +99,7 @@ class PyCalcCtrl:
 def evaluateExpression(expression):
     try:
         result = str(eval(expression,{},{}))
-    except Exception:
+    except ValueError:
         result = ERROR_MSG
     return result
 

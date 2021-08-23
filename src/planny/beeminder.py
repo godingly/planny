@@ -1,17 +1,36 @@
+from typing import Optional
+from planny.utils import *
 import requests
-import sys,os
-import json
 from datetime import datetime
 
+# slugs
+MEDITATION='meditation'
+SITUPS = 'situps'
+PUSHUPS = 'pushups'
+STRETCH = 'stretch'
+RUN = 'run'
+BEEMINDER_PATTERNS = ['pushups?', 'situps?','run', 'ran', 'stretch', 'meditation', 'water']
 
 class Beeminder:
-    def __init__(self):
+    def __init__(self) -> None:
         self._base_url="https://www.beeminder.com/api/v1"
         self._user="thefinaldanse"
         self._token="zyvC_K-zsNR-cKJYiixR"
 
-    def get_goal(self,slug):
-        # https://www.beeminder.com/api/v1/users/alice/goals/weight.json?auth_token=abc123&datapoints=true
+    @staticmethod
+    def name_to_slug(name: str) -> str:
+        d = {
+            'pushup':PUSHUPS, 'pushups?':PUSHUPS,
+            'situp':SITUPS,'situps?':SITUPS, 'crunch':SITUPS, 'crunches':SITUPS,
+            'drink':'water',
+            'stretched':STRETCH, 'stretches':STRETCH, 'stretching':STRETCH,
+            'running':RUN, 'ran':RUN,
+            'meditated':MEDITATION, 'meditate':MEDITATION
+            }
+        return d.get(name, name)
+
+    
+    def get_goal(self,slug: str) -> JSON_Dict:
         endpoint = f'users/{self._user}/goals/{slug}.json'
         data = {'datapoints':'true'}
         result = self._call(endpoint, data)
@@ -24,7 +43,6 @@ class Beeminder:
         return list_of_goals
     
     def get_datapoints(self, slug, count=None, sort=None):
-        # https://www.beeminder.com/api/v1/users/alice/goals/weight/datapoints.json?auth_token=abc123
         endpoint = f'users/{self._user}/goals/{slug}/datapoints.json'
         data = {}
         if count: data['count']=count
@@ -33,47 +51,50 @@ class Beeminder:
         # {'timestamp', 'value', 'comment', 'daystamp'}
         return datapoints
 
-    def add_datapoint(self, slug, value, comment=None):
+    def add_datapoint(self, slug: str, value: float, comment: Optional[str] = None) -> JSON_Dict:
+        slug = self.name_to_slug(slug)
+        print(f"add_datapoint(): added {value} to {slug}")
         endpoint = f'users/{self._user}/goals/{slug}/datapoints.json'
-        data = {'value':value}
-        if comment: data['comment'] = comment
+        data : Dict[str, Any] = {'value': value}
+        if comment is not None:
+            data['comment'] = comment
         result = self._call(endpoint, data, method='POST')
         return result
-
     
-    def get_user(self):
-        # https://www.beeminder.com/api/v1/users/alice.json?auth_token=abc123
+    def get_user(self) -> JSON_Dict:
         endpoint = f'users/{self._user}.json'
         user = self._call(endpoint)
+
         goals_slugs = user['goals'] # list of slugs ['', '', ]
-        updated_at = user['updated_at'] # timestamp
-        date = datetime.fromtimestamp(updated_at) #datetime object
+        updated_at = user['updated_at'] # timestamp of last update
+        last_update_date = datetime.fromtimestamp(updated_at) #datetime object
         return user
     
-    def charge(self, amount, note, dryrun='true'):
+    def charge(self, amount: float, note: str, dryrun: str = 'true') -> JSON_Dict:
         endpoint = 'charges.json'
         data = {'amount':amount, note:'note', 'dryrun':dryrun}
         charge = self._call(endpoint, data, method='POST')
         return charge
     
-    def _call(self, endpoint, data=None, method='GET'):
+    def _call(self, endpoint: str,
+                    data: Optional[JSON_Dict] = None,
+                    method: str = 'GET') -> JSON_Dict:
         if not data: data = {}
         data['auth_token'] = self._token
+        
         url = f'{self._base_url}/{endpoint}/'
-        result = None
+        
         if method== 'GET':
             result = requests.get(url, data)
         elif method == 'POST':
             result = requests.post(url, data)
         elif method == 'PUT':
             result = requests.put(url, data)
+        else: # method 
+            raise Exception(f'_call(), unknown method: {method}')
         
         if not result.status_code == requests.codes.ok:
             raise Exception(f'Beeminder API failed with code {result.status_code}: {result.text}')
 
-        return None if result is None else result.json()
-
-if __name__ == '__main__':
-    bee=Beeminder()
-    a=3
+        return result.json()
     

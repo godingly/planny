@@ -32,10 +32,13 @@
 - [ ] finish tasks by simply entering next mission/ "finish"/"done"
 - [ ] Display celebration when finishing a task
 - [ ] Punish if not enough time is traced
+- [ ] for each task, track how long it took
 
 ## Future
-
+- [ ] integration with Apple Health
 - [ ] Fuzzy Search
 - [ ] Firebase server
 - [ ] iOS app
-
+- [ ] Firebase
+- [ ] speech recognition
+- [ ] Website

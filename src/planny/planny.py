@@ -1,17 +1,17 @@
-from planny import ERROR_MSG
-import sys,os
+import sys
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import QApplication, QDialog, QDialogButtonBox, QFormLayout, QGridLayout, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QStatusBar, QToolBar
-from PyQt5.QtWidgets import QPushButton, QVBoxLayout, QWidget
+from PyQt5.QtWidgets import QApplication, QDialog, QHBoxLayout,QLineEdit, QPushButton
+from PyQt5.QtWidgets import QVBoxLayout
 from functools import partial
+from planny.model import Model
 
-# GUI
+# View
 class PlannyUi(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle("planny")
-        self.generalLayout=QVBoxLayout()
+        self.generalLayout=QHBoxLayout()
         self._createDisplay()
         self.setLayout(self.generalLayout)
 
@@ -19,7 +19,9 @@ class PlannyUi(QDialog):
         self.display = QLineEdit()
         self.display.setFixedHeight(35)
         self.display.setAlignment(Qt.AlignLeft)
+        self.display.setText('hello'); self.display.setText('')
         self.generalLayout.addWidget(self.display)
+        
 
     def displayText(self): return self.display.text()
     def setDisplayText(self, text): self.display.setText(text); self.display.setFocus()
@@ -27,35 +29,31 @@ class PlannyUi(QDialog):
 
 # Controller
 class PlannyCtrl:
-    def __init__(self, model, view):
-        self._view=view
-        self._model=model
+    def __init__(self, model: Model, view: PlannyUi) -> None:
+        self._view = view
+        self._model = model
         self._connectSignals()
     
-    def _evaluate(self):
+    def _evaluate(self) -> None:
         expr = self._view.displayText()
+        if expr.lower() == 'exit':
+            exit()
         self._model.evaluate(expr)
+        # update View 
         self._view.clearDisplay()
     
-    def _connectSignals(self):
-        self._view.display.returnPressed.connect(self._evaluate)
-# Model
-class PlannyModel:
-    def init(self):
-        pass
-    def evaluate(self, expression):
-        print(expression)
+    def _connectSignals(self) -> None:
+        self._view.display.returnPressed.connect(partial(self._evaluate))
+
 
 def main():
     app = QApplication(sys.argv)
     # Viewer
     view = PlannyUi()
-    view.show()
     # Controller
-    model = PlannyModel()
-    ctrl = PlannyCtrl(view=view, model=model)
+    model = Model()
+    PlannyCtrl(view=view, model=model)
+    view.show()
     # Executre
     sys.exit(app.exec_())
 
-if __name__=='__main__':
-    main()
