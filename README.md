@@ -3,6 +3,7 @@ Manage your To-Do list via CLI
 Integrations:
 - [x] Beeminder
 - [ ] Toggle
+- [ ] google calendar
 
 # TODO
 ## New Task
