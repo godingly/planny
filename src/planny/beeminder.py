@@ -2,6 +2,7 @@ from typing import Optional
 from planny.utils import *
 import requests
 from datetime import datetime
+from _private import BEEMINDER_USER, BEEMINDER_TOKEN
 
 # slugs
 MEDITATION='meditation'
@@ -12,10 +13,10 @@ RUN = 'run'
 BEEMINDER_PATTERNS = ['pushups?', 'situps?','run', 'ran', 'stretch', 'meditation', 'water']
 
 class Beeminder:
-    def __init__(self) -> None:
+    def __init__(self, user=BEEMINDER_USER, token=BEEMINDER_TOKEN) -> None:
         self._base_url="https://www.beeminder.com/api/v1"
-        self._user="thefinaldanse"
-        self._token="zyvC_K-zsNR-cKJYiixR"
+        self._user=user
+        self._token=token
 
     @staticmethod
     def name_to_slug(name: str) -> str:

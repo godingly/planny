@@ -7,3 +7,4 @@ __pycache__/
 *stam*
 .pylintrc
 .idea*
+**/*_private*
