@@ -29,4 +29,5 @@ def toggleWindow(qWidget: QWidget):
 
 # flash
 
-def resetBackgroundColor(qWidget : QWidget): qWidget.setStyleSheet("")
+def resetBackgroundColor(qWidget : QWidget):
+     qWidget.setStyleSheet("")

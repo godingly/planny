@@ -25,7 +25,7 @@ class EventWindow(QDialog):
         self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint) # type: ignore
 
         # flash
-        self.flashTime = QTime(0,0,58)
+        self.flashTime = QTime(0,0,40)
         self.isFlashOn = False
         self.isBlueBackground = False
         
@@ -103,6 +103,7 @@ class EventWindow(QDialog):
         return self.mSecsPassed
 
     def endCurEvent(self):
+        self.stopFlash()
         self.resetCoundownTime()
         self.timer.stop()
         self.mSecsPassed = 0
@@ -111,7 +112,7 @@ class EventWindow(QDialog):
 
     def timeout(self):
         self.countdownTime = self.countdownTime.addMSecs(-self.countdownDeltaMS)
-        self.mSecsPassed += 1
+        self.mSecsPassed += self.countdownDeltaMS
         self.updateCountdownLabel()
         if self.isTimerEnded():
             summary = self.getSummary()
@@ -159,6 +160,7 @@ class EventWindow(QDialog):
     
     def stopFlash(self):
         utils_qt.resetBackgroundColor(self)
+        self.isFlashOn = False
         self.timer.stop()
         self.countdownDeltaMS = 1000
         self.timer.start(self.countdownDeltaMS)
