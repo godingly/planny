@@ -14,7 +14,7 @@ class Task:
 
 class Tasker:
     def __init__(self) -> None:
-        pass
+        self.currentTask = None
     
     def new(self, name, tag = '') -> Task:
         # complete previous task if one exists

@@ -8,3 +8,7 @@ __pycache__/
 .pylintrc
 .idea*
 **/*_private*
+src/credentials/
+credentials_gcal_desktop_secret.json
+src/config.py
+token.json
