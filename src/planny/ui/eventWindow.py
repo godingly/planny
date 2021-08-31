@@ -1,8 +1,14 @@
 from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel
 from PyQt5.QtCore import QTimer, QTime, Qt
+from PyQt5.QtMultimedia import QSound
+
+import os
+import datetime
+from pathlib import Path
+
 from planny.utils import qt as utils_qt
 from planny.utils import time as utils_time
-import datetime
+
 
 class EventWindow(QDialog):
     def __init__(self, args):
@@ -12,27 +18,34 @@ class EventWindow(QDialog):
         self.layout_ = QGridLayout()
         self.resize(100, 50) # width, height
         self.zeroTime = QTime(0,0,0)
-        self._initWidgets()
+        self._init_widgets()
         
         # timer        
         self.timer = QTimer()
         self.timer.timeout.connect(self.timeout)
-        self.startDateTime = datetime.datetime.min
+        self.start_datetime = datetime.datetime.min
         self.endtDateTime : datetime.datetime
         self.countdownTime : QTime
         self.mSecsPassed = 0  # int, number of microsecnds from start
         self.countdownDeltaMS = 1000
-        self.setWindowFlags(Qt.Window | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint) # type: ignore
+        self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint) # type: ignore
+        # self.setWindowFlags(Qt.Dialog | Qt.WindowStaysOnTopHint) # type: ignore
+        file_path = Path(__file__).resolve()
+        wav_path = Path(file_path.parent.parent.parent, 'resources','kill_bill_whistle.wav')
+        self.alarm = QSound(str(wav_path))
+
 
         # flash
-        self.flashTime = QTime(0,0,40)
+        if args.debug:
+            self.flashTime = QTime(0,0,58)
+        else:
+            self.flashTime = QTime(0,0,40)
         self.isFlashOn = False
         self.isBlueBackground = False
         
         self.setLayout(self.layout_)
-
-
-    def _initWidgets(self):
+    
+    def _init_widgets(self):
         # create widgets
         # summary and timeLabel
         self.summaryLabel = QLabel()
@@ -52,97 +65,116 @@ class EventWindow(QDialog):
         """ positions widget at right edge of screen, slightly above center"""
         self.show()   
         geo = self.frameGeometry() # QRect (x,y, width, height)
-        screenUperrRight = utils_qt.getScreenUpperRight()
-        geo.moveBottomRight(screenUperrRight)
+        screen_upper_right = utils_qt.getScreenUpperRight()
+        geo.moveBottomRight(screen_upper_right)
         self.move(geo.topLeft()) # move(QPoint=x,y)
     
-    def updateStartEndLabel(self):
+    def update_startEnd_label(self):
         """ sets StarTEndLabel to show 8:30-12:40"""
-        startEndStr = utils_time.datetimes_to_hours_minutes(self.startDateTime, self.endDateTime)
+        startEndStr = utils_time.datetimes_to_hours_minutes(self.start_datetime, self.end_datetime)
         self.startEndLabel.setText(startEndStr)
     
     # overriding
-    def closeEvent(self, event):
-        self.endCurEvent()
+    def close_event(self, event):
+        self.end_cur_event()
         event.accept()
     
+    def mouseReleaseEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            qPoint = event.globalPos() 
+            geo = self.frameGeometry() # QRect (x,y, width, height)
+            geo.moveCenter(qPoint)
+            self.move(geo.topLeft()) # move(QPoint=x,y)    
+    
     def start(self, summary: str,
-              startDateTime: datetime.datetime,
-              endDateTime: datetime.datetime,
-              countdownTime : datetime.time):
+              start_datetime: datetime.datetime,
+              end_datetime: datetime.datetime):
         """ starts new event"""    
         self.timer.stop()
         
         # set summary
         self.setWindowTitle(summary)
-        self.setSummary(summary)
+        self.set_summary(summary)
         
         # set startime, endtime
-        self.startDateTime = startDateTime 
-        self.endDateTime = endDateTime
-        self.updateStartEndLabel()
+        self.start_datetime = start_datetime 
+        self.end_datetime = end_datetime
+        self.update_startEnd_label()
         
         # set coundown
-        self.setCountdownTime(countdownTime)
-        self.updateCountdownLabel()
+        countdown_time = utils_time.timedelta_to_datetime_time(end_datetime - start_datetime) # type: datetime.time
+        self.set_countdown_time(countdown_time)
+        self.update_countdown_label()
         # start timer
         self.timer.start(self.countdownDeltaMS)
 
-    
-    def setSummary(self, summary: str):
+        if self.isVisible() is False:
+            self.show()
+        self._position()
+
+    def play_alert(self):
+        pass
+    def set_summary(self, summary: str):
          self.summaryLabel.setText(summary)
          self.adjustSize()
          self._position()
     
-    def getSummary(self) -> str: return self.summaryLabel.text()
+    def get_summary(self) -> str: return self.summaryLabel.text()
     
-    def setCountdownTime(self, time: datetime.time): self.countdownTime = QTime(time) # type: ignore
-    def resetCoundownTime(self): self.countdownTime = QTime()
-    def getMSecsToStart(self) -> int: 
+    def set_countdown_time(self, time: datetime.time): self.countdown_time = QTime(time) # type: ignore
+    def reset_coundown_time(self): self.countdown_time = QTime()
+    def get_MSecs_to_start(self) -> int: 
         """ how many microseconds have passed since the start"""
         return self.mSecsPassed
 
-    def endCurEvent(self):
-        self.stopFlash()
-        self.resetCoundownTime()
-        self.timer.stop()
-        self.mSecsPassed = 0
+    def reset_labels(self):
         self.summaryLabel.setText('')
         self.countdownLabel.setText('')
+        # self.nextEventLabel.setText('')
+        # self.startEndLabel.setText('')
+
+    
+    def end_cur_event(self):
+        self.stop_flash()
+        self.reset_coundown_time()
+        self.timer.stop()
+        self.mSecsPassed = 0
+        self.reset_labels()
+        
 
     def timeout(self):
-        self.countdownTime = self.countdownTime.addMSecs(-self.countdownDeltaMS)
+        self.countdown_time = self.countdown_time.addMSecs(-self.countdownDeltaMS)
         self.mSecsPassed += self.countdownDeltaMS
-        self.updateCountdownLabel()
-        if self.isTimerEnded():
-            summary = self.getSummary()
+        self.update_countdown_label()
+        if self.is_timer_ended():
+            summary = self.get_summary()
             print(f'timer for {summary} ended!!!')
             self.timer.stop()
             self.timerCallback(summary)
-        elif self.countdownTime < self.flashTime: # type: ignore
-            self.startFlash()
-            self.toggleBackGroundColor()
+        elif self.countdown_time < self.flashTime: # type: ignore
+            self.start_flash()
+            self.toggle_background_color()
             
-    def setTimerCallBack(self, callback): 
+    def set_timer_callback(self, callback): 
         self.timerCallback = callback 
     
-    def updateCountdownLabel(self):
-        countdown_str = utils_time.QTime_to_str(self.countdownTime)
+    def update_countdown_label(self):
+        countdown_str = utils_time.QTime_to_str(self.countdown_time)
         self.countdownLabel.setText(countdown_str)
 
-    def isTimerEnded(self) -> bool:
-        return self.countdownTime == self.zeroTime
+    def is_timer_ended(self) -> bool:
+        return self.countdown_time == self.zeroTime
     
-    def addMinutes(self, minutes: int):
-        self.endDateTime += datetime.timedelta(minutes=minutes)
-        self.updateStartEndLabel()
+    def add_minutes(self, minutes: int):
+        self.end_datetime += datetime.timedelta(minutes=minutes)
+        self.update_startEnd_label()
         
-        self.countdownTime = self.countdownTime.addSecs(minutes * 60)
-        self.updateCountdownLabel()
-        self.stopFlash()
+        self.countdown_time = self.countdown_time.addSecs(minutes * 60)
+        self.update_countdown_label()
+        self.stop_flash()
         
     # flash
-    def toggleBackGroundColor(self):
+    def toggle_background_color(self):
         if self.isBlueBackground:
             self.setStyleSheet("background-color: red;")
             self.isBlueBackground = False
@@ -150,18 +182,20 @@ class EventWindow(QDialog):
             self.setStyleSheet("background-color: blue;")
             self.isBlueBackground = True
     
-    def startFlash(self):
+    def start_flash(self):
         if self.isFlashOn:
             return
         self.timer.stop()
         self.countdownDeltaMS = 200
         self.timer.start(self.countdownDeltaMS)
         self.isFlashOn = True
+        self.alarm.play()
     
-    def stopFlash(self):
+    def stop_flash(self):
         utils_qt.resetBackgroundColor(self)
         self.isFlashOn = False
         self.timer.stop()
+        self.alarm.stop()
         self.countdownDeltaMS = 1000
         self.timer.start(self.countdownDeltaMS)
 

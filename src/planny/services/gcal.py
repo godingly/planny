@@ -55,7 +55,11 @@ class GCal:
             start = event['start'].get('dateTime', event['start'].get('date'))
             print(start, event['summary'])
 
-    def add_event(self, summary, start, end, all_day=False):
+    def add_event(self,
+                 summary : str,
+                 start: datetime,
+                 end : datetime, 
+                 all_day: bool=False):
         """
         start/end (datetime) aware, in local timezone, 
         if all-day, then only YYYY-MM-DD
@@ -89,6 +93,7 @@ class GCal:
         assert event['status'] == 'confirmed', f'event={event}, {summary}, start={start}, end={end}'
         event_id = event['id']
         print ('Event created: %s' % (event.get('htmlLink')))
+        return event_id
 
 def update_event(event_id):
     # TODO

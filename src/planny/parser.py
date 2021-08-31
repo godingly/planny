@@ -5,8 +5,12 @@ if __name__=='__main__':
 import re
 from typing import Tuple, Optional, Match
 from collections import defaultdict
+import datetime
+from datetime import timedelta
+
 from planny.utils.utils import *
-from enum import Enum, auto
+import planny.utils.time as utils_time
+
 
 # REGEX PATTERNS 
 NUM_PAT = r'(?P<number>-?\d+(?:.\d+)?)' # 20.3, -13
@@ -20,17 +24,28 @@ DAY_SHORT_FORM = r'\b(sun|mon|tue|wed|thu|fri|sat)\b'
 DAY_LONG_FORM = r'\b(sunday|monday|tueday|wednesday|thursday|friday|saturday)\b'
 # DAY_PAT = r'\b(?P<day>(mon|tues|wed(nes)?|thur(s)?|fri|sat(ur)?|sun)(day)?)\b'
 
+PLAYLIST_PAT = r"-p\s+(?P<playlist>\w+)"
+
 # PREFIX
 BEE_PREFIX = 'bee '
 TASK_PREFIX = 'task '
 EVENT_PREFIX = 'event '
+PLAYLIST_DELETE_PREFIX = 'playlist delete'
+PLAYLIST_START_PREFIX = 'playlist start'
+NEXT_TASK_CODES = ['n', 'next']
 
 def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     s = s.lower()
     
     if s in EVENT_FINISH_CODES:
         return Expr_Type.EVENT_FINISH, {}
+
+    if s in NEXT_TASK_CODES:
+        return Expr_Type.NEXT_TASK, {}
     
+    elif s == 'exit':
+        type_, data = Expr_Type.EXIT, {}
+
     elif s.startswith(BEE_PREFIX):
         type_, data = parse_beeminder(s[len(BEE_PREFIX):])
     
@@ -39,6 +54,17 @@ def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     
     elif s.startswith('+'):
         type_, data = parse_more_minutes(s[1:])
+    
+    elif s.startswith(TASK_PREFIX):
+        type_, data = parse_task(s[len(TASK_PREFIX):])
+    
+    elif s.startswith(PLAYLIST_DELETE_PREFIX):
+        playlist = s[len(PLAYLIST_DELETE_PREFIX):].strip()
+        type_, data = Expr_Type.PLAYLIST_DELETE, {'playlist':playlist}
+
+    elif s.startswith(PLAYLIST_START_PREFIX):
+        playlist = s[len(PLAYLIST_START_PREFIX):].strip()
+        type_, data = Expr_Type.PLAYLIST_DELETE, {'playlist':playlist}
     
     else:
         type_, data = parse_task(s)
@@ -55,72 +81,71 @@ def search_and_consume(pat: str, s:str) -> Tuple[Optional[Match], str]:
     sub_s = s[:match.start()]+s[match.end():]
     return match, sub_s
 
-# TODO search_consume wither finditer
-
-def parse_more_minutes(s: str) -> Tuple[Expr_Type, JSON_Dict]:
-    d = {}
-    match = re.match(DURATION_MIN_PAT, s)
-    if not match:
-        return Expr_Type.UNKNOWN, {}
-    d['minutes']= match.group("minutes")
-    return Expr_Type.MORE_MINUTES, d
-
 # def parse_playlist() -> Tuple[str, JSON_Dict]:
 #     pass
 
-# def parse_task(s: str) -> Tuple[Expr_Type.TASK, JSON_Dict]:
-#     pass
-
-
-# def parse_date(s: str) -> Tuple[str, JSON_Dict]:
-#     """ possible date, could be Wed|wednesday|1.7|1.7.20"1.7.2020"""
-#     # look for weekday
-#     dict = {}
-#     match, snew = search_and_consume(DAY_PAT, s)
-#     if match:
-#         dict['day']
-#         # look for closest day of week
-#     # else, look for date
+def parse_task(s: str) -> Tuple[Expr_Type, JSON_Dict]:
+    """ task summary -p playlist 20m"""
+    d = dict()
+    match, snew = search_and_consume(DURATION_MIN_PAT, s)
+    if match: # 20m, duration
+        d['duration'] = match.group("minutes")
+    else: 
+        # TODO perhaps insert default time
+        return Expr_Type.UNKNOWN, d
     
+    match, snew = search_and_consume(PLAYLIST_PAT,snew)
+    if match: # -p playlist
+        d['playlist'] = match.group("playlist")
+    else: return Expr_Type.UNKNOWN, d
+    d['summary'] = snew.strip()
+    return Expr_Type.TASK, d
 
-def get_hour_minute(s: str) -> str:
-    """ returns string 12:00, from input of 12:00 or 12"""
-    l = s.split(':')
-    if len(l) == 1:
-        hour = l[0]
-        minute = '00'
-    elif len(l) == 2:
-        hour = l[0]
-        minute = l[1]
-    else:
-        raise Exception(f"get_hour_minute({s})")
-    assert len(hour)==2 and len(minute)==2
-    return f'{hour}:{minute}'
 
 def parse_time(s: str) -> Tuple[str, JSON_Dict]:
     """ look for 20m or 12:00-13, returns consumed string"""
     d = defaultdict(dict)
-    match, snew = search_and_consume(DURATION_MIN_PAT, s)
-    if match: # 20m, duration
-        d['duration'] = match.group("minutes")
-    else: # 12:00-13
-        match, snew = search_and_consume(HOURS_PAT, s)
-        if not match: # no time
+    duration_match, snew = search_and_consume(DURATION_MIN_PAT, s)
+    if duration_match: # 20m, duration
+        d['duration'] = duration_match.group("minutes")
+    else: # maybe 12:00-13
+        hours_match, snew = search_and_consume(HOURS_PAT, s)
+        if not hours_match: # no 12:00-13
             return s, {}
-        start_time = match.group("start_time")
-        d['start']['time'] = get_hour_minute(start_time)
-        end_time = match.group("end_time")
-        d['end']['time'] = get_hour_minute(end_time)
+        start_time = hours_match.group("start_time")
+        d['start']['time'] = utils_time.get_hour_minute(start_time) #08:25
+        end_time = hours_match.group("end_time")
+        d['end']['time'] = utils_time.get_hour_minute(end_time) #08:25
     return snew, d
 
 def parse_datetime(s: str) -> Tuple[str, JSON_Dict]:
     snew, d = parse_time(s)
     if not d:
+        # TODO perhaps all day event, i.e. s = 'event summary Wednesday'
         return s, {}
     # parse date
-
-    return snew, d
+    # if there's no date, then assume date=today
+    # TODO look for date, parse_date
+    if 'duration' in d:
+        duration = int(d['duration']) 
+        start_datetime = utils_time.get_current_local(round=False) # type: datetime.datetime
+        end_datetime = start_datetime + timedelta(minutes=duration) # type: datetime.datetime
+        if duration >= 5:
+            end_datetime = utils_time.round_datetime(end_datetime)
+    elif 'start' in d and 'time' in d['start']: # 12:30-13:00
+        start_time = d['start']['time'] # type: str # 08:25, 13:30  
+        start_datetime = utils_time.get_today_with_hour(start_time) # type: datetime.datetime
+        end_time = d['end']['time'] # could be 13:00, or 06:00
+        end_datetime = utils_time.get_today_with_hour(end_time) # type: datetime.datetime
+        if end_datetime < start_datetime:
+            end_datetime += timedelta(days=1)
+    else:
+        raise Exception('addEvent() invalid input')
+    # TODO all day event
+    d['start']['datetime'] = start_datetime
+    d['end']['datetime'] = end_datetime
     
+    return snew, d
 
 
 def parse_event(s: str) -> Tuple[Expr_Type, JSON_Dict]:
@@ -131,6 +156,15 @@ def parse_event(s: str) -> Tuple[Expr_Type, JSON_Dict]:
         return Expr_Type.UNKNOWN, {}
     d['summary'] = snew.strip()
     return Expr_Type.EVENT, d 
+
+
+def parse_more_minutes(s: str) -> Tuple[Expr_Type, JSON_Dict]:
+    d = {}
+    match = re.match(DURATION_MIN_PAT, s)
+    if not match:
+        return Expr_Type.UNKNOWN, {}
+    d['minutes']= match.group("minutes")
+    return Expr_Type.MORE_MINUTES, d
 
 
 def parse_beeminder(s: str) -> Tuple[Expr_Type, JSON_Dict]:
@@ -150,6 +184,5 @@ def parse_beeminder(s: str) -> Tuple[Expr_Type, JSON_Dict]:
 
 
 if __name__=='__main__':
-    s1 = '12:00-13 word1 word2'
-    m, snew = parse_time(s1)
+    a=2
     a=3

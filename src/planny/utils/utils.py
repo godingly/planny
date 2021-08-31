@@ -13,6 +13,10 @@ class Expr_Type(Enum):
     EVENT = auto()
     MORE_MINUTES = auto()
     UNKNOWN = auto()
+    EXIT  = auto()
+    PLAYLIST_DELETE = auto()
+    PLAYLIST_START = auto()
+    NEXT_TASK = auto()
 
 
 EVENT_FINISH_CODES = ['f']
