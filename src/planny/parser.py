@@ -130,7 +130,7 @@ def parse_datetime(s: str) -> Tuple[str, JSON_Dict]:
         duration = int(d['duration']) 
         start_datetime = utils_time.get_current_local(round=False) # type: datetime.datetime
         end_datetime = start_datetime + timedelta(minutes=duration) # type: datetime.datetime
-        if duration >= 5:
+        if duration > 5:
             end_datetime = utils_time.round_datetime(end_datetime)
     elif 'start' in d and 'time' in d['start']: # 12:30-13:00
         start_time = d['start']['time'] # type: str # 08:25, 13:30  

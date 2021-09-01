@@ -24,6 +24,11 @@ class LineEdit(QDialog):
 
         self.layout_.addWidget(self.editline)
         
+    # overriding
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.showMinimized()
+    
     def lineEditText(self): return self.editline.text()
     def setLineEditText(self, text): self.editline.setText(text); self.editline.setFocus()
     def clearLineEditText(self): self.setLineEditText('')

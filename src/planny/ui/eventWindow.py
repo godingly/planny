@@ -86,6 +86,11 @@ class EventWindow(QDialog):
             geo.moveCenter(qPoint)
             self.move(geo.topLeft()) # move(QPoint=x,y)    
     
+    # overriding
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_Escape:
+            self.showMinimized()
+    
     def start(self, summary: str,
               start_datetime: datetime.datetime,
               end_datetime: datetime.datetime):
