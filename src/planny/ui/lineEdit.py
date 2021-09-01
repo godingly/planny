@@ -1,9 +1,6 @@
 """ Viewer """
 from PyQt5.QtWidgets import QDialog, QHBoxLayout, QLineEdit
 from PyQt5.QtCore import Qt
-from planny.ui.eventWindow import EventWindow
-from PyQt5.QtGui import QIcon
-from pathlib import Path
 
 class LineEdit(QDialog):
     def __init__(self, args, parent=None):
