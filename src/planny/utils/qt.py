@@ -1,7 +1,9 @@
-
-
-from PyQt5.QtCore import QPoint, QRect
+from PyQt5.QtCore import QPoint
+from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget
+
+import random
+import string
 
 LARGE_FONT_SIZE = 22
 
@@ -26,6 +28,13 @@ def toggleWindow(qWidget: QWidget):
         qWidget.show()
 
 
+def set_icon(app, icon_path: str, app_id: str=""):
+    if not app_id: app_id = "".join(random.choices(string.ascii_lowercase, k=10))
+    # icon
+    import ctypes
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
+    icon = QIcon(icon_path)
+    app.setWindowIcon(icon)
 
 # flash
 
