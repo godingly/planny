@@ -77,6 +77,10 @@ def timedelta_to_datetime_time(td: timedelta) -> datetime.time:
     time = (datetime.datetime.min + td).time()
     return time
 
+def timedelta_to_QTime(td: timedelta) -> QTime:
+    datetime_time = timedelta_to_datetime_time(td)
+    return QTime(datetime_time) # type: ignore
+
 # convert date string to datetime
 def extract_date(s: str) -> Optional[datetime_d]:
     """ 29.5, 01.01, 1.1, 29.5.23, 29.05.2023. Or with '/' instead of '.' """
@@ -103,6 +107,8 @@ def datetimes_to_hours_minutes(time1: datetime_t, time2: datetime_t) -> str:
     hour_minute_str2 = time2.strftime('%#H:%M')
     return f'{hour_minute_str1}-{hour_minute_str2}'
 
+def from_iso_format_to_datetime(iso_str: str) -> datetime_t:
+    return datetime.datetime.fromisoformat(iso_str)
 
 def datetime_time_to_str(time: datetime.time) -> str:
     if time.hour != 0:
@@ -158,4 +164,18 @@ def add_times(*strings) -> str:
 
     return f'{total_hours}:{total_minutes}'
     
+def get_timedelta_from_now_to(dt: datetime_t) -> timedelta:
+    """ dt msut be aware"""
+    now = get_current_local()
+    return (dt - now)
 
+def get_now_plus_duration(duration_in_minutes: int, start_time: Optional[datetime_t] = None) -> datetime_t:
+    """ return startime + duration. start_time defaults to local aware now. Returns local aware"""
+    if not start_time:
+        start_time = get_current_local()
+    td = timedelta(minutes=duration_in_minutes)
+    return start_time + td
+
+if __name__=='__main__':
+    now = get_current_local()
+    a=3

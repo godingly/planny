@@ -1,4 +1,4 @@
-from PyQt5.QtCore import QPoint
+from PyQt5.QtCore import QPoint, QTimer
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QApplication, QWidget
 
@@ -16,9 +16,10 @@ def getScreenUpperRight() -> QPoint:
     screenGeometry = QApplication.desktop().availableGeometry() #QRect, (0,0,1920,1048) (x,y, width, height)
     return QPoint(int(screenGeometry.right()*0.96), screenGeometry.height()//3)
 
-def setFont(widget: QWidget, size: int):
+def setFont(widget: QWidget, size: int, isBold: bool=False):
     font = widget.font()
     font.setPointSize(size)
+    font.setBold(isBold)
     widget.setFont(font)
 
 def toggleWindow(qWidget: QWidget):
@@ -29,12 +30,22 @@ def toggleWindow(qWidget: QWidget):
 
 
 def set_icon(app, icon_path: str, app_id: str=""):
-    if not app_id: app_id = "".join(random.choices(string.ascii_lowercase, k=10))
+    if not app_id:
+        app_id = "".join(random.choices(string.ascii_lowercase, k=10))
     # icon
     import ctypes
     ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(app_id)
     icon = QIcon(icon_path)
     app.setWindowIcon(icon)
+
+def getSingleShotTimer(callback):
+    """ without calling start"""
+    timer = QTimer()
+    timer.setSingleShot(True)
+    timer.timeout.connect(callback)
+    # timer.start(timeInMilliseoncs)
+    return timer
+    
 
 # flash
 

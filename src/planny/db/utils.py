@@ -1,12 +1,13 @@
 """ utility for sqlite db"""
 
+def sval(val):
+    if type(val) is str:
+        return f"'{val}'"
+    return val
+
 def query_all_tables_names():
-        return '''
-        SELECT name 
-        FROM sqlite_master 
-        WHERE 
-            type ='table' AND name NOT LIKE 'sqlite_%';
-        '''
+        query = "SELECT name FROM sqlite_master WHERE type ='table' AND name NOT LIKE 'sqlite_%' ;"
+        return query
 
 def values_to_sql(values: list) -> str:
     """ receives [1, 'Paul', 20.00], 
@@ -14,9 +15,7 @@ def values_to_sql(values: list) -> str:
     """
     str_values = []
     for val in values:
-        if type(val) == str:
-            val = f"'{val}'"
-        str_values.append(str(val))
+        str_values.append(str(sval(val)))
     res = ','.join(str_values)
     print(res)
     return res

@@ -2,6 +2,7 @@
 
 import datetime
 from PyQt5.QtWidgets import QDialog
+from planny.task import Task
 from planny.ui.lineEdit import LineEdit
 from planny.ui.eventWindow import EventWindow
 import planny.utils.time as utils_time
@@ -23,15 +24,11 @@ class PlannyWidget():
     def is_timer_ended(self) -> bool:
         return self.eventWindow.is_timer_ended()
 
-    def set_timer_callBack(self, callback):
+    def set_timer_callback(self, callback):
         self.eventWindow.set_timer_callback(callback)
 
-    def add_event(self, data):
-        self.eventWindow.start(data['summary'],
-                               data['start']['datetime'],
-                               data['end']['datetime'])
-
-        # minimize lineEdit
+    def add_event(self, task: Task):
+        self.eventWindow.start(task)
         self.lineEdit.showMinimized()
     
     def end_cur_event(self): 
@@ -42,5 +39,5 @@ class PlannyWidget():
         mSecsToStart =  self.eventWindow.get_MSecs_to_start()
         return mSecsToStart // 1000      
 
-    def add_minutes(self, minutes):
-        self.eventWindow.add_minutes(minutes)
+    def change_minutes(self, minutes):
+        self.eventWindow.change_minutes(minutes)

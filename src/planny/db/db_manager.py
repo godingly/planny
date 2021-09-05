@@ -47,5 +47,5 @@ class SQLite_DB:
     def get_all_tables_names(self):
         query = utils_db.query_all_tables_names()
         cursor = self.conn.execute(query)
-        return cursor
+        return list(cursor)
 

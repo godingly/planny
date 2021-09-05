@@ -1,10 +1,11 @@
-from PyQt5.QtWidgets import QDialog, QGridLayout, QLabel
+from PyQt5.QtWidgets import QDialog, QFrame, QGridLayout, QHBoxLayout, QLabel
 from PyQt5.QtCore import QTimer, QTime, Qt
 from PyQt5.QtMultimedia import QSound
 
 import os
 import datetime
 from pathlib import Path
+from planny.task import Task
 
 from planny.utils import qt as utils_qt
 from planny.utils import time as utils_time
@@ -40,26 +41,39 @@ class EventWindow(QDialog):
             self.flashTime = QTime(0,0,58)
         else:
             self.flashTime = QTime(0,0,40)
+        self.breakFlashTime = QTime(0,0,20)
         self.isFlashOn = False
-        self.isBlueBackground = False
+        self.isRedBackground = False
         
         self.setLayout(self.layout_)
     
     def _init_widgets(self):
-        # create widgets
-        # summary and timeLabel
-        self.summaryLabel = QLabel()
+        
+        # boardLabel + listLabel
+        self.boardLabel = QLabel()
+        self.listLabel = QLabel()
+        utils_qt.setFont(self.boardLabel, 20, isBold=True) # _, font size
+        self.layout_.addWidget(self.boardLabel,0,0)
+        self.layout_.addWidget(self.listLabel,0,1)
+        
+        # add line between
+        qLine = QFrame(); qLine.setFrameShape(qLine.HLine);qLine.setLineWidth(2)
+        h_layout = QHBoxLayout(); h_layout.addWidget(qLine)
+        self.layout_.addItem(h_layout, 1, 0, rowSpan=1, columnSpan=2)
+        
+        # nameLabel + countdownLabel
+        self.nameLabel = QLabel()
         self.countdownLabel = QLabel()
-        utils_qt.setFont(self.summaryLabel, utils_qt.LARGE_FONT_SIZE)
-        utils_qt.setFont(self.countdownLabel, utils_qt.LARGE_FONT_SIZE)
-        self.layout_.addWidget(self.summaryLabel, 0, 0)
-        self.layout_.addWidget(self.countdownLabel, 0, 1)
+        utils_qt.setFont(self.nameLabel, 20)
+        utils_qt.setFont(self.countdownLabel, 20)
+        self.layout_.addWidget(self.nameLabel,2,0)
+        self.layout_.addWidget(self.countdownLabel,2,1)
 
         # startEndLabel and nextEvent label
         self.startEndLabel = QLabel()
-        self.layout_.addWidget(self.startEndLabel,1,0)
         self.nextEventLabel = QLabel('next event')
-        self.layout_.addWidget(self.nextEventLabel,1,1)
+        self.layout_.addWidget(self.startEndLabel,3,0)
+        self.layout_.addWidget(self.nextEventLabel,3,1)
     
     def _position(self):
         """ positions widget at right edge of screen, slightly above center"""
@@ -68,6 +82,8 @@ class EventWindow(QDialog):
         screen_upper_right = utils_qt.getScreenUpperRight()
         geo.moveBottomRight(screen_upper_right)
         self.move(geo.topLeft()) # move(QPoint=x,y)
+    
+        
     
     def update_startEnd_label(self):
         """ sets StarTEndLabel to show 8:30-12:40"""
@@ -89,25 +105,28 @@ class EventWindow(QDialog):
     # overriding
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
-            self.showMinimized()
+            self.showMinimized() 
     
-    def start(self, summary: str,
-              start_datetime: datetime.datetime,
-              end_datetime: datetime.datetime):
-        """ starts new event"""    
+    def start(self, task: Task):
+        """starts new event"""    
         self.timer.stop()
         
-        # set summary
-        self.setWindowTitle(summary)
-        self.set_summary(summary)
+        # set labels
+        self.setWindowTitle(task.name)
+        self.boardLabel.setText(task.board.capitalize())
+        self.listLabel.setText(task.list)
+        self.boardLabel.adjustSize(); self.listLabel.adjustSize()
+        self.name = task.name
+        self.set_name(task.name)
+        
         
         # set startime, endtime
-        self.start_datetime = start_datetime 
-        self.end_datetime = end_datetime
+        self.start_datetime = task.start_datetime 
+        self.end_datetime = task.end_datetime
         self.update_startEnd_label()
         
         # set coundown
-        countdown_time = utils_time.timedelta_to_datetime_time(end_datetime - start_datetime) # type: datetime.time
+        countdown_time = utils_time.timedelta_to_datetime_time(task.end_datetime - task.start_datetime) # type: datetime.time
         self.set_countdown_time(countdown_time)
         self.update_countdown_label()
         # start timer
@@ -115,16 +134,15 @@ class EventWindow(QDialog):
 
         if self.isVisible() is False:
             self.show()
+        self.adjustSize()
         self._position()
+        self.setToolTip(task.desc)
 
-    def play_alert(self):
-        pass
-    def set_summary(self, summary: str):
-         self.summaryLabel.setText(summary)
-         self.adjustSize()
-         self._position()
+    def set_name(self, name: str):
+         self.nameLabel.setText(name)
+         self.nameLabel.adjustSize()
     
-    def get_summary(self) -> str: return self.summaryLabel.text()
+    def get_name(self) -> str: return self.nameLabel.text()
     
     def set_countdown_time(self, time: datetime.time): self.countdown_time = QTime(time) # type: ignore
     def reset_coundown_time(self): self.countdown_time = QTime()
@@ -133,11 +151,12 @@ class EventWindow(QDialog):
         return self.mSecsPassed
 
     def reset_labels(self):
-        self.summaryLabel.setText('')
+        self.boardLabel.setText('')
+        self.listLabel.setText('')
+        self.nameLabel.setText('')
         self.countdownLabel.setText('')
         # self.nextEventLabel.setText('')
         # self.startEndLabel.setText('')
-
     
     def end_cur_event(self):
         self.stop_flash()
@@ -152,11 +171,13 @@ class EventWindow(QDialog):
         self.mSecsPassed += self.countdownDeltaMS
         self.update_countdown_label()
         if self.is_timer_ended():
-            summary = self.get_summary()
-            print(f'timer for {summary} ended!!!')
+            print(f'timer for {self.name} ended!!!')
             self.timer.stop()
-            self.timerCallback(summary)
-        elif self.countdown_time < self.flashTime: # type: ignore
+            self.timerCallback(self.name, self.boardLabel.text())
+        elif self.name != 'break' and self.countdown_time < self.flashTime: # type: ignore
+            self.start_flash()
+            self.toggle_background_color()
+        elif self.name == 'break' and self.countdown_time < self.breakFlashTime: # type: ignore
             self.start_flash()
             self.toggle_background_color()
             
@@ -166,11 +187,12 @@ class EventWindow(QDialog):
     def update_countdown_label(self):
         countdown_str = utils_time.QTime_to_str(self.countdown_time)
         self.countdownLabel.setText(countdown_str)
+        self.countdownLabel.adjustSize()
 
     def is_timer_ended(self) -> bool:
         return self.countdown_time == self.zeroTime
     
-    def add_minutes(self, minutes: int):
+    def change_minutes(self, minutes: int):
         self.end_datetime += datetime.timedelta(minutes=minutes)
         self.update_startEnd_label()
         
@@ -180,12 +202,12 @@ class EventWindow(QDialog):
         
     # flash
     def toggle_background_color(self):
-        if self.isBlueBackground:
-            self.setStyleSheet("background-color: red;")
-            self.isBlueBackground = False
-        else:
+        if self.isRedBackground:
             self.setStyleSheet("background-color: blue;")
-            self.isBlueBackground = True
+            self.isRedBackground = False
+        else:
+            self.setStyleSheet("background-color: red;")
+            self.isRedBackground = True
     
     def start_flash(self):
         if self.isFlashOn:

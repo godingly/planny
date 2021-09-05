@@ -15,7 +15,7 @@ STRETCH = 'stretch'
 RUN = 'run'
 TRACKED = 'tracked'
 
-DEF_CHARGE = 5 # default amount of dollars to charge
+DEFAULT_CHARGE_AMOUNT = 5 # default amount of dollars to charge
 
 class Beeminder:
     def __init__(self, json_path: str, debug: bool) -> None:
@@ -80,11 +80,14 @@ class Beeminder:
         last_update_date = datetime.fromtimestamp(updated_at) #datetime object
         return user
     
-    def charge(self, note: str,amount: int = DEF_CHARGE, dryrun: str = '') -> Optional[JSON_Dict]:
+    def charge(self, note: str,amount: int = 0, dryrun: str = '') -> Optional[JSON_Dict]:
         endpoint = 'charges.json'
+        if not amount: amount = DEFAULT_CHARGE_AMOUNT
         data = {'amount':amount, note:'note'}
-        if dryrun or self.debug: data['dryrun'] = dryrun
+        if dryrun or self.debug or note=="break": 
+            return
         charge = self._call(endpoint, data, method='POST')
+        print(f"!!! charged {amount}$ for {note}")
         return charge
 
     def add_time_tracked(self, secondsTracked: int):
