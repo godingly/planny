@@ -33,6 +33,9 @@ class Ctrl:
         if type_ == Expr_Type.EXIT:
             self.exit()
 
+        elif type_ == Expr_Type.REFRESH:
+            self.start_current_task()
+        
         elif type_ == Expr_Type.EVENT_FINISH:
             self.end_cur_event(is_completed=True)
             self.start_current_task()
@@ -122,6 +125,7 @@ class Ctrl:
     def connect_signals(self) -> None:
         self.view.lineEdit.editline.returnPressed.connect(partial(self.evaluate))
         self.view.set_timer_callback(self.timer_callback)
+        self.view.set_refresh_callback(self.refresh_callback)
     
     def timer_callback(self, name, board="event", amount=0):
         print("timer ended")
@@ -130,4 +134,5 @@ class Ctrl:
         else:
             self.model.bee_charge(name, amount)
         
-        
+    def refresh_callback(self):
+        self.start_current_task()

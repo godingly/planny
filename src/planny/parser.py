@@ -32,6 +32,7 @@ TASK_PREFIX = 'task '
 EVENT_PREFIX = 'event '
 BREAK_PREFIX = 'break'
 BOARD_START_PREFIX = 'start '
+REFRESH = 'refresh'
 
 def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     s = s.lower()
@@ -41,6 +42,9 @@ def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     
     elif s == 'exit':
         type_, data = Expr_Type.EXIT, {}
+
+    elif s == REFRESH:
+        type_, data = Expr_Type.REFRESH, {}
 
     elif s.startswith(BREAK_PREFIX):
         type_, data = parse_break(s)

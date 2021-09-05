@@ -20,6 +20,7 @@ class Expr_Type(Enum):
     BREAK = auto()
     EXIT  = auto()
     UNKNOWN = auto()
+    REFRESH = auto()
 
 
 EVENT_FINISH_CODES = ['f']

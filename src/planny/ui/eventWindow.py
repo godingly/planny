@@ -105,6 +105,8 @@ class EventWindow(QDialog):
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.showMinimized() 
+        elif e.key() == Qt.Key_F5:
+            self.refresh_callback()
     
     def start(self, task: Task):
         """starts new event"""    
@@ -118,7 +120,6 @@ class EventWindow(QDialog):
         self.nextEventLabel.setText(task.next_event_name); self.nextEventLabel.adjustSize()
         self.name = task.name
         self.set_name(task.name)
-        
         
         # set startime, endtime
         self.start_datetime = task.start_datetime 
@@ -183,6 +184,9 @@ class EventWindow(QDialog):
             
     def set_timer_callback(self, callback): 
         self.timerCallback = callback 
+
+    def set_refresh_callback(self, callback):
+        self.refresh_callback = callback
     
     def update_countdown_label(self):
         countdown_str = utils_time.QTime_to_str(self.countdown_time)

@@ -27,6 +27,10 @@ class PlannyWidget():
     def set_timer_callback(self, callback):
         self.eventWindow.set_timer_callback(callback)
 
+    def set_refresh_callback(self, callback):
+        self.eventWindow.set_refresh_callback(callback)
+        self.lineEdit.set_refresh_callback(callback)
+
     def add_event(self, task: Task):
         self.eventWindow.start(task)
         self.lineEdit.showMinimized()

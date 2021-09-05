@@ -27,10 +27,15 @@ class LineEdit(QDialog):
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.showMinimized()
+        elif e.key() == Qt.Key_F5:
+            self.refresh_callback()
     
     def lineEditText(self): return self.editline.text()
     def setLineEditText(self, text): self.editline.setText(text); self.editline.setFocus()
     def clearLineEditText(self): self.setLineEditText('')
+
+    def set_refresh_callback(self, callback):
+        self.refresh_callback = callback
 
 
 
