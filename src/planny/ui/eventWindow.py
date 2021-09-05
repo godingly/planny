@@ -48,7 +48,6 @@ class EventWindow(QDialog):
         self.setLayout(self.layout_)
     
     def _init_widgets(self):
-        
         # boardLabel + listLabel
         self.boardLabel = QLabel()
         self.listLabel = QLabel()

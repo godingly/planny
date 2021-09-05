@@ -110,7 +110,7 @@ class Model:
         self.add_time_tracked(int(event_duration_in_seconds))
         
         # update trello
-        if is_completed:
+        if is_completed and self.current_task.name != BREAK:
             self.trello.complete_first_card(self.current_task.board)
         
         if event_duration_in_seconds > 60:

@@ -183,6 +183,7 @@ class Trello:
     def get_first_list_cards(self, board_name):
         """ returns a list of dicts + first_list_name, each dict a card,
         where card={'id', 'name', 'pos', 'idList', 'due', 'desc'}"""
+        lists_name_to_id = self.get_board_list_id_name(board_name)[1]
         first_list_name, first_list_id = self.get_first_list_name_id(board_name)
         if not first_list_id:
             return []
@@ -201,6 +202,10 @@ class Trello:
             num_total_cards, num_completed_cards = self.get_board_total_completed_cards(board_name)
             first_list_card['num_total_cards'] = num_total_cards
             first_list_card['num_completed_cards'] = num_completed_cards
+            if num_cards_in_list > 1:
+                first_list_card['next_event_name'] = first_list_cards[1]['name']
+            else:
+                first_list_card['next_event_name'] = 'end of list'
             return first_list_card
         else:
             return {}

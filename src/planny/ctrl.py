@@ -49,6 +49,8 @@ class Ctrl:
                         board=data.get('board', self.current_board),
                         start_datetime=data['start']['datetime'],
                         end_datetime=data['end']['datetime'],)
+            if self.model.current_task:
+                task.next_event_name = self.model.current_task.name 
             self.start_event(task)
 
         elif type_ == Expr_Type.CHANGE_MINUTES:

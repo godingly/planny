@@ -24,6 +24,7 @@ class Expr_Type(Enum):
 
 EVENT_FINISH_CODES = ['f']
 DEFAULT_BOARD = 'misc'
+BREAK = 'break'
 
 
 def get_random_string() -> str:
