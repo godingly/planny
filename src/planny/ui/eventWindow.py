@@ -70,7 +70,7 @@ class EventWindow(QDialog):
 
         # startEndLabel and nextEvent label
         self.startEndLabel = QLabel()
-        self.nextEventLabel = QLabel('next event')
+        self.nextEventLabel = QLabel()
         self.layout_.addWidget(self.startEndLabel,3,0)
         self.layout_.addWidget(self.nextEventLabel,3,1)
     
@@ -115,6 +115,7 @@ class EventWindow(QDialog):
         self.boardLabel.setText(task.board.capitalize())
         self.listLabel.setText(task.list)
         self.boardLabel.adjustSize(); self.listLabel.adjustSize()
+        self.nextEventLabel.setText(task.next_event_name); self.nextEventLabel.adjustSize()
         self.name = task.name
         self.set_name(task.name)
         

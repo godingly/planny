@@ -22,10 +22,6 @@ class Model:
         self.secs_tracked = 0 # in seconds
         self.current_task : Task
     
-    def exit(self):
-        """ methods to run when closing"""
-        self.update_time_tracked()
-    
     # CURRENT
     
     def get_current_planny_cmd(self) -> Tuple[CmdName, Datetime, Datetime]:
@@ -53,6 +49,7 @@ class Model:
                     num_cards_in_list=trello_d['num_cards_in_list'],
                     num_total_cards=trello_d['num_total_cards'],
                     num_completed_cards=trello_d['num_completed_cards'],
+                    next_event_name=trello_d['next_event_name'],
                     )
         task.start_datetime = utils_time.get_current_local()
         task.end_datetime = task.start_datetime + timedelta(minutes=task.duration)

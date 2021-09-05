@@ -66,7 +66,7 @@ class Ctrl:
     def exit(self):
         if self.current_timer:
             self.current_timer.stop()
-        self.model.exit()
+        self.model.end_cur_event()
         exit()
 
     

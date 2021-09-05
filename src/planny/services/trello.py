@@ -183,7 +183,6 @@ class Trello:
     def get_first_list_cards(self, board_name):
         """ returns a list of dicts + first_list_name, each dict a card,
         where card={'id', 'name', 'pos', 'idList', 'due', 'desc'}"""
-        lists_name_to_id = self.get_board_list_id_name(board_name)[1]
         first_list_name, first_list_id = self.get_first_list_name_id(board_name)
         if not first_list_id:
             return []
@@ -192,12 +191,17 @@ class Trello:
     def get_first_card(self, board_name) -> JSON_Dict:
         """ returns first task on first list, or empty dict if board has no cards"""
         """ returns a dict {'id', 'name', 'pos', 'idList', 'due', 'desc', 'num_cards_in_list'}"""
-        first_list_cards, first_list_name = self.get_first_list_cards(board_name)
+        lists_names_id = list((self.get_board_list_id_name(board_name)[1]).items()) # list of tuples [('list_name', 'list_id'), (), ..]
+        num_of_lists = len(lists_names_id)
+        if num_of_lists == 0:
+            return {}
+        
+        first_list_cards = self.get_list_cards(board_name, list_id=lists_names_id[0][1])
         num_cards_in_list = len (first_list_cards)
         if num_cards_in_list:
             first_list_card = parse_card_name(first_list_cards[0])
             first_list_card['board'] = board_name
-            first_list_card['list'] = first_list_name
+            first_list_card['list'] = lists_names_id[0][0]
             first_list_card['num_cards_in_list'] = num_cards_in_list
             num_total_cards, num_completed_cards = self.get_board_total_completed_cards(board_name)
             first_list_card['num_total_cards'] = num_total_cards
@@ -205,7 +209,10 @@ class Trello:
             if num_cards_in_list > 1:
                 first_list_card['next_event_name'] = first_list_cards[1]['name']
             else:
-                first_list_card['next_event_name'] = 'end of list'
+                if num_of_lists > 1:
+                    first_list_card['next_event_name'] = f'next: {lists_names_id[1][0]}'
+                else:
+                    first_list_card['next_event_name'] = 'end of board'
             return first_list_card
         else:
             return {}
@@ -279,13 +286,14 @@ class Trello:
             raise Exception(f'_call(), unknown method: {method}')
         
         if not result.status_code == requests.codes.ok:
-            raise Exception(f'Trello API failed with code {result.status_code}: {result.text}')
+            raise Exception(f'Trello API failed with code {result.status_code}: {result.text}, {method} {url}')
 
         return result.json()
 
 def main():
     json_path = r'C:\Users\godin\Python\planny\src\credentials\trello.json'
     t = Trello(json_path)
+    t.get_first_card(PLANNY)
     
     a=3
 
