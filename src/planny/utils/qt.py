@@ -38,12 +38,12 @@ def set_icon(app, icon_path: str, app_id: str=""):
     icon = QIcon(icon_path)
     app.setWindowIcon(icon)
 
-def getSingleShotTimer(callback):
+def startSingleShotTimer(callback, timeInMilliseoncs):
     """ without calling start"""
     timer = QTimer()
     timer.setSingleShot(True)
     timer.timeout.connect(callback)
-    # timer.start(timeInMilliseoncs)
+    timer.start(timeInMilliseoncs)
     return timer
     
 

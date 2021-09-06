@@ -11,11 +11,14 @@ from typing import OrderedDict as tOrderedDict
 from collections import OrderedDict
 
 from planny.parser import search_and_consume, DURATION_MIN_PAT
+from planny.task import Task, TASK_DEFAULT_DURATION
 
 JSON_Dict = Dict[str, Any]
 PLANNY = 'planny'
 STAGE1 = 'Stage 1'
 COMPLETED = 'Completed'
+
+
 
 
 
@@ -25,7 +28,7 @@ Name = str
 
 def parse_card_name(card_dict):
     duration_match, name = search_and_consume(DURATION_MIN_PAT, card_dict['name'])
-    duration = int(duration_match.group("minutes")) if duration_match else 20
+    duration = int(duration_match.group("minutes")) if duration_match else TASK_DEFAULT_DURATION
     card_dict['name'] = name
     card_dict['duration'] = duration
     return card_dict
@@ -83,6 +86,7 @@ class Trello:
         return res
 
     def get_board_total_completed_cards(self, board_name) -> Tuple[int, int]:
+        """ returns # of cards in board + # of completed cards in board"""
         board_id = self.board_name_to_id[board_name]
         endpoint = f"boards/{board_id}/cards"
         fields = {"fields":["id"]} # [{'id':213}, {}]
@@ -188,34 +192,32 @@ class Trello:
             return []
         return self.get_list_cards(board_name, list_id=first_list_id), first_list_name
    
-    def get_first_card(self, board_name) -> JSON_Dict:
+    def get_first_card(self, board_name) -> Task:
         """ returns first task on first list, or empty dict if board has no cards"""
-        """ returns a dict {'id', 'name', 'pos', 'idList', 'due', 'desc', 'num_cards_in_list'}"""
+        """ returns a dict {'id', 'name', 'pos', 'idList', 'due', 'desc', 'num_cards_in_list', 'next_event_name'}"""
         lists_names_id = list((self.get_board_list_id_name(board_name)[1]).items()) # list of tuples [('list_name', 'list_id'), (), ..]
         num_of_lists = len(lists_names_id)
         if num_of_lists == 0:
-            return {}
+            return None # type: ignore
         
         first_list_cards = self.get_list_cards(board_name, list_id=lists_names_id[0][1])
         num_cards_in_list = len (first_list_cards)
         if num_cards_in_list:
             first_list_card = parse_card_name(first_list_cards[0])
-            first_list_card['board'] = board_name
-            first_list_card['list'] = lists_names_id[0][0]
-            first_list_card['num_cards_in_list'] = num_cards_in_list
-            num_total_cards, num_completed_cards = self.get_board_total_completed_cards(board_name)
-            first_list_card['num_total_cards'] = num_total_cards
-            first_list_card['num_completed_cards'] = num_completed_cards
+            # num_total_cards, num_completed_cards = self.get_board_total_completed_cards(board_name)
+            task = Task(name=first_list_card['name'],
+                        duration=first_list_card['duration'],
+                        desc=first_list_card['desc'],
+                        board=board_name,
+                        list=lists_names_id[0][0],
+                        num_cards_in_list=num_cards_in_list,)
             if num_cards_in_list > 1:
-                first_list_card['next_event_name'] = first_list_cards[1]['name']
+                task.next_event_name = first_list_cards[1]['name']
             else:
-                if num_of_lists > 1:
-                    first_list_card['next_event_name'] = f'next: {lists_names_id[1][0]}'
-                else:
-                    first_list_card['next_event_name'] = 'end of board'
-            return first_list_card
+                task.next_event_name = f'List: {lists_names_id[1][0]}' if num_of_lists > 1 else 'board end'
+            return task
         else:
-            return {}
+            return None # type: ignore
     
     def add_card(self, board_name, list_name, name, pos="top") -> JSON_Dict:
         """ add cards to list in board. creates list if one doesn't exist"""

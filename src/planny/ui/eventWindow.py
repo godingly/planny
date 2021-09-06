@@ -27,7 +27,6 @@ class EventWindow(QDialog):
         self.start_datetime = datetime.datetime.min
         self.endtDateTime : datetime.datetime
         self.countdownTime : QTime
-        self.mSecsPassed = 0  # int, number of microsecnds from start
         self.countdownDeltaMS = 1000
         self.setWindowFlags(Qt.Dialog | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint) # type: ignore
         # self.setWindowFlags(Qt.Dialog | Qt.WindowStaysOnTopHint) # type: ignore
@@ -162,15 +161,11 @@ class EventWindow(QDialog):
     # time
     def set_countdown_time(self, time: datetime.time): self.countdown_time = QTime(time) # type: ignore
     def reset_coundown_time(self): self.countdown_time = QTime()
-    def get_MSecs_to_start(self) -> int: 
-        """ how many microseconds have passed since the start"""
-        return self.mSecsPassed
     
     def end_cur_event(self):
         self.stop_flash()
         self.reset_coundown_time()
         self.timer.stop()
-        self.mSecsPassed = 0
         self.reset_labels()    
     
     def is_timer_ended(self) -> bool:
@@ -187,7 +182,6 @@ class EventWindow(QDialog):
     # Callbacks
     def timeout(self):
         self.countdown_time = self.countdown_time.addMSecs(-self.countdownDeltaMS)
-        self.mSecsPassed += self.countdownDeltaMS
         self.update_countdown_label()
         if self.is_timer_ended():
             print(f'timer for {self.name} ended!!!')

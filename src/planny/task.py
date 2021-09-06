@@ -1,6 +1,7 @@
 from datetime import datetime
 from dataclasses import dataclass
 from typing import Optional
+TASK_DEFAULT_DURATION = 20
 
 @dataclass
 class Task:
@@ -15,3 +16,4 @@ class Task:
     num_cards_in_list: int = 0
     num_total_cards: int = 0
     num_completed_cards: int = 0
+    origin: str = ""

@@ -18,7 +18,6 @@ class Ctrl:
     def __init__(self, model: Model, view: PlannyWidget) -> None:
         self.view = view
         self.model = model
-        self.minutesTracked = 0
         self.current_board = DEFAULT_BOARD
         self.planny_cmd_timer = None
         self.connect_signals()
@@ -48,13 +47,7 @@ class Ctrl:
             self.add_event(task)
 
         if type_ == Expr_Type.BREAK:
-            task = Task(name=data['name'],
-                        board=data.get('board', self.current_board),
-                        start_datetime=data['start']['datetime'],
-                        end_datetime=data['end']['datetime'],)
-            if self.model.current_task:
-                task.next_event_name = self.model.current_task.name 
-            self.start_event(task)
+            self.start_break(data)
 
         elif type_ == Expr_Type.CHANGE_MINUTES:
             self.change_minutes(data['minutes'])
@@ -66,33 +59,34 @@ class Ctrl:
             self.start_board(data['board'])
 
     def exit(self):
-        self.model.end_cur_event()
+        self.model.end_cur_event(force_update_track_time=True)
         exit()
     
     def start_current_task(self):
         if self.planny_cmd_timer:
-            print("stopping self.planny_cmd_timer")
             self.planny_cmd_timer.stop()
+        # get current task
         task = self.model.get_current_task()
-        if not task:
-            return
+        if not task: return
         self.current_board = task.board
-        # start timer to create timer when time ends
+        # start update command timer
         now = utils_time.get_current_local()
-        
         td = utils_time.get_timedelta_from_now_to(task.end_datetime)
         assert td.total_seconds() > 0, f"start_planny_cmd, now={now}, cmd_end_datetime = {task.end_datetime}, board = {self.current_board}"
-        
-        self.planny_cmd_timer = utils_qt.getSingleShotTimer(partial(self.start_current_task))
-        self.planny_cmd_timer.start((td.total_seconds()+1) * 1000) # type: ignore
-
-        
-        # view start task
+        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.start_current_task), (td.total_seconds()+1)*1000 )
+        # start event
         self.start_event(task)
+
     
-    def planny_cmd_timer_callback(self):
-        print("called planny_cmd_callbcak")
-    
+    def start_break(self, data):
+        task = Task(name='break',
+                    board=self.model.current_task.name,
+                    start_datetime=data['start']['datetime'],
+                    end_datetime=data['end']['datetime'],
+                    origin='break',
+                    next_event_name = f"{self.current_board}:{self.model.current_task.name}")
+        self.start_event(task)
+
     def finish_event(self):
         self.end_cur_event(is_completed=True)
         self.start_current_task()
@@ -119,9 +113,6 @@ class Ctrl:
         self.current_board = task.board
         self.view.add_event(task)
 
-    def get_secs_to_start(self) -> int:
-        return self.view.get_secs_to_start()
-
     def end_cur_event(self, is_completed=False):
         self.model.end_cur_event(is_completed)
         self.view.end_cur_event()
@@ -134,11 +125,11 @@ class Ctrl:
         self.view.set_finish_event_callback(self.finish_event)
     
     def timer_callback(self, name, board="event", amount=0):
-        print("timer ended")
-        if name == "break" or board=="event":
-            self.start_current_task()
-        else:
+        print("ctrl(): timer ended")
+        if name != "break" and board not in ['events', 'chores', 'break']:
             self.model.bee_charge(name, amount)
+        self.start_current_task()
+            
         
     def refresh_callback(self):
         self.start_current_task()

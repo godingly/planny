@@ -4,7 +4,7 @@ in utc. you create one by datetime.ta
 from PyQt5.QtCore import QDateTime, QTime
 
 import datetime
-from datetime import timedelta, tzinfo, timezone
+from datetime import date, timedelta, tzinfo, timezone
 import tzlocal
 import pytz
 import arrow
@@ -64,6 +64,7 @@ def get_current_local(round: bool=False, with_seconds: bool=False) -> datetime_t
     """ returns current aware local datetime"""
     current_utc_aware_dt = get_current_utc(round, with_seconds)
     return utc_to_local(current_utc_aware_dt)
+
 
 def datetime_to_iso(dt: datetime_t) -> str:
     return dt.isoformat()
@@ -163,7 +164,15 @@ def add_times(*strings) -> str:
         total_hours += q
 
     return f'{total_hours}:{total_minutes}'
-    
+
+def get_today_midnight() -> datetime_t:
+    """returns midnight 00:00 for today""" 
+    return datetime.datetime.now().replace(hour=0,minute=0,second=0,microsecond=0)
+
+def get_today_midnight_unix_timestamp() -> int:
+    midnight_dt = get_today_midnight()
+    return int(midnight_dt.timestamp())
+
 def get_timedelta_from_now_to(dt: datetime_t) -> timedelta:
     """ dt msut be aware"""
     now = get_current_local(with_seconds=True)

@@ -30,11 +30,6 @@ class PlannyWidget():
     
     def end_cur_event(self): 
         self.eventWindow.end_cur_event()
-    
-    def get_secs_to_start(self) -> int:
-        """ return number of seconds since event start"""
-        mSecsToStart =  self.eventWindow.get_MSecs_to_start()
-        return mSecsToStart // 1000      
 
     def change_minutes(self, minutes):
         self.eventWindow.change_minutes(minutes)

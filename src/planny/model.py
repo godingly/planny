@@ -11,7 +11,11 @@ from planny.utils.utils import *
 import planny.utils.time as utils_time
 import planny.utils.qt as utils_qt
 
+CHORES = ['clean', 'clean apartment', 'morning', 'breakfast', 'brunch', 'lunch', 'dinner', 'run', 'walk', 
+         'supper', 'book', 'read', 'drive','groceris','shower','bathroom','fun', 'market', 'store', 'shopping',
+         'dumbbell','dumbbells', 'treadmill', 'elliptical', 'music']
 
+SECS_BTWN_BREAKS = 60 * 60 
 
 class Model:
     def __init__(self, args) -> None:
@@ -20,9 +24,37 @@ class Model:
         self.gcal = GCal(args.gcal_credentials_json, args.debug)
         self.trello = Trello(args.trello_json)
         self.secs_tracked = 0 # in seconds
+        self.secs_since_last_break = 0
         self.current_task : Task
     
     # CURRENT
+    def get_current_task(self) -> Task:
+        """ returns cmd_end_datetime + Task of the board specified in Calendar planny_cmd"""
+        cmd_name, cmd_start_datetime, cmd_end_datetime = self.get_current_planny_cmd()
+        if not cmd_name: return None # type: ignore
+        
+        if cmd_name in CHORES:
+            self.secs_since_last_break = 0
+            return Task(name=cmd_name, start_datetime = cmd_start_datetime, end_datetime = cmd_end_datetime,
+                        board="chores", origin="chores")
+                    
+        elif cmd_name.startswith('event '):
+            event_name = cmd_name[len('event '):]
+            task = Task(name=event_name, board="events",
+                        start_datetime = cmd_start_datetime, end_datetime = cmd_end_datetime)
+            return task
+        
+        elif cmd_name == BREAK or self.secs_since_last_break > SECS_BTWN_BREAKS:
+            self.secs_since_last_break = 0
+            return Task(name="break", start_datetime = cmd_start_datetime, end_datetime = cmd_end_datetime,
+                        board="break", origin="break")
+        
+        else: # trello task
+            board_name = cmd_name
+            task = self.get_board_first_task(board_name)
+            task.start_datetime = utils_time.get_current_local()
+            task.end_datetime = min( (task.start_datetime + timedelta(minutes=task.duration)), cmd_end_datetime)
+            return task
     
     def get_current_planny_cmd(self) -> Tuple[CmdName, Datetime, Datetime]:
         """ returns the current planny cmd from Google Calendar. 
@@ -35,41 +67,9 @@ class Model:
             return cmd_name, start_datetime, end_datetime
         else:
             return "", None, None # type: ignore
-        
-        return cmd_name, start_datetime, end_datetime
     
-    def get_board_first_task(self, board_name: str) -> Task:
-        """ returns first Task from given board"""
-        trello_d = self.trello.get_first_card(board_name) # {'id', 'name', 'pos', 'idList', 'due', 'desc', 'list,'board'}
-        task = Task(name=trello_d['name'],
-                    desc=trello_d['desc'],
-                    duration=trello_d['duration'],
-                    board=trello_d['board'],
-                    list=trello_d['list'],
-                    num_cards_in_list=trello_d['num_cards_in_list'],
-                    num_total_cards=trello_d['num_total_cards'],
-                    num_completed_cards=trello_d['num_completed_cards'],
-                    next_event_name=trello_d['next_event_name'],
-                    )
-        task.start_datetime = utils_time.get_current_local()
-        task.end_datetime = task.start_datetime + timedelta(minutes=task.duration)
-        return task
-           
-    def get_current_task(self) -> Task:
-        """ returns cmd_end_datetime + Task of the board specified in Calendar planny_cmd"""
-        cmd_name, cmd_start_datetime, cmd_end_datetime = self.get_current_planny_cmd()
-        if not cmd_name:
-            return None # type: ignore
-        if cmd_name.startswith('event'):
-            event_name = cmd_name
-            task = Task(name=event_name, board="Events",start_datetime=cmd_start_datetime, end_datetime=cmd_end_datetime)
-            return task
-        else:
-            board_name = cmd_name
-            task = self.get_board_first_task(board_name)
-            task.end_datetime = min( (task.start_datetime + timedelta(minutes=task.duration)), cmd_end_datetime)
-            return task
-    
+    def get_board_first_task(self, board_name: str) -> Task: return self.trello.get_first_card(board_name)
+
     def change_minutes(self, minutes: int):
         td = timedelta(minutes=minutes)
         self.current_task.end_datetime += td
@@ -85,26 +85,14 @@ class Model:
         self.gcal.add_planny_cmd_event(board_name, start_datetime, end_datetime)
     
     # END EVENT 
-    def update_time_tracked(self):
-        if self.secs_tracked > 0:
-            self.bee.add_time_tracked(self.secs_tracked)
-            self.secs_tracked = 0
-    
-    def add_time_tracked(self, timeInSeconds: int):
-        self.secs_tracked += timeInSeconds
-        if self.secs_tracked > 3600:
-            self.update_time_tracked()
-    
-    def end_cur_event(self, is_completed=False):
+    def end_cur_event(self, is_completed=False, force_update_track_time: bool=False):
         # update time tracking
         time_now_aware = utils_time.get_current_local()
-        try:
-            self.current_task.end_datetime = time_now_aware
-        except AttributeError:
-            return
+        try: self.current_task.end_datetime = time_now_aware
+        except AttributeError: return
         
         event_duration_in_seconds = (time_now_aware - self.current_task.start_datetime).total_seconds()
-        self.add_time_tracked(int(event_duration_in_seconds))
+        self.update_time_tracked(int(event_duration_in_seconds), force_update_track_time)
         
         # update trello
         if is_completed and self.current_task.name != BREAK:
@@ -116,7 +104,11 @@ class Model:
                                 start=self.current_task.start_datetime,
                                 end=self.current_task.end_datetime,)
 
-        
+    def update_time_tracked(self, secs_tracked: int, force_update_track_time: bool = False):
+        self.secs_tracked += secs_tracked
+        self.secs_since_last_break += secs_tracked
+        if self.secs_tracked > 3600 or force_update_track_time:
+            self.bee.add_time_tracked(secs_tracked)
     
     # BEEMINDER
     def add_beeminder_datapoint(self, slug_value_dict):
