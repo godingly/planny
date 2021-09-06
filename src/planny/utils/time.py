@@ -166,7 +166,7 @@ def add_times(*strings) -> str:
     
 def get_timedelta_from_now_to(dt: datetime_t) -> timedelta:
     """ dt msut be aware"""
-    now = get_current_local()
+    now = get_current_local(with_seconds=True)
     return (dt - now)
 
 def get_now_plus_duration(duration_in_minutes: int, start_time: Optional[datetime_t] = None) -> datetime_t:

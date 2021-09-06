@@ -2,6 +2,7 @@ from functools import partial
 import datetime
 from datetime import timedelta
 
+from PyQt5.QtCore import QTimer
 
 from planny.model import Model
 from planny.task import Task
@@ -19,7 +20,7 @@ class Ctrl:
         self.model = model
         self.minutesTracked = 0
         self.current_board = DEFAULT_BOARD
-        self.current_timer = None
+        self.planny_cmd_timer = None
         self.connect_signals()
         self.start_current_task()
     
@@ -37,8 +38,7 @@ class Ctrl:
             self.start_current_task()
         
         elif type_ == Expr_Type.EVENT_FINISH:
-            self.end_cur_event(is_completed=True)
-            self.start_current_task()
+            self.finish_event()
 
         if type_ == Expr_Type.EVENT:
             task = Task(name=data['name'],
@@ -65,15 +65,14 @@ class Ctrl:
         elif type_ == Expr_Type.BOARD_START:
             self.start_board(data['board'])
 
-    
     def exit(self):
-        if self.current_timer:
-            self.current_timer.stop()
         self.model.end_cur_event()
         exit()
-
     
     def start_current_task(self):
+        if self.planny_cmd_timer:
+            print("stopping self.planny_cmd_timer")
+            self.planny_cmd_timer.stop()
         task = self.model.get_current_task()
         if not task:
             return
@@ -83,12 +82,20 @@ class Ctrl:
         
         td = utils_time.get_timedelta_from_now_to(task.end_datetime)
         assert td.total_seconds() > 0, f"start_planny_cmd, now={now}, cmd_end_datetime = {task.end_datetime}, board = {self.current_board}"
-        self.current_timer = utils_qt.getSingleShotTimer(self.start_current_task)
-        self.current_timer.start((td.total_seconds()+1) * 1000) # type: ignore
+        
+        self.planny_cmd_timer = utils_qt.getSingleShotTimer(partial(self.start_current_task))
+        self.planny_cmd_timer.start((td.total_seconds()+1) * 1000) # type: ignore
+
         
         # view start task
         self.start_event(task)
-
+    
+    def planny_cmd_timer_callback(self):
+        print("called planny_cmd_callbcak")
+    
+    def finish_event(self):
+        self.end_cur_event(is_completed=True)
+        self.start_current_task()
     
     def start_board(self, board_name : str):
         self.current_board = board_name
@@ -116,8 +123,6 @@ class Ctrl:
         return self.view.get_secs_to_start()
 
     def end_cur_event(self, is_completed=False):
-        if self.current_timer:
-            self.current_timer.stop()
         self.model.end_cur_event(is_completed)
         self.view.end_cur_event()
     
@@ -126,6 +131,7 @@ class Ctrl:
         self.view.lineEdit.editline.returnPressed.connect(partial(self.evaluate))
         self.view.set_timer_callback(self.timer_callback)
         self.view.set_refresh_callback(self.refresh_callback)
+        self.view.set_finish_event_callback(self.finish_event)
     
     def timer_callback(self, name, board="event", amount=0):
         print("timer ended")
@@ -136,3 +142,4 @@ class Ctrl:
         
     def refresh_callback(self):
         self.start_current_task()
+

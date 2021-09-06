@@ -24,13 +24,6 @@ class PlannyWidget():
     def is_timer_ended(self) -> bool:
         return self.eventWindow.is_timer_ended()
 
-    def set_timer_callback(self, callback):
-        self.eventWindow.set_timer_callback(callback)
-
-    def set_refresh_callback(self, callback):
-        self.eventWindow.set_refresh_callback(callback)
-        self.lineEdit.set_refresh_callback(callback)
-
     def add_event(self, task: Task):
         self.eventWindow.start(task)
         self.lineEdit.showMinimized()
@@ -45,3 +38,14 @@ class PlannyWidget():
 
     def change_minutes(self, minutes):
         self.eventWindow.change_minutes(minutes)
+
+    # Callbacks
+    def set_timer_callback(self, callback):
+        self.eventWindow.set_timer_callback(callback)
+
+    def set_refresh_callback(self, callback):
+        self.eventWindow.set_refresh_callback(callback)
+        self.lineEdit.set_refresh_callback(callback)
+
+    def set_finish_event_callback(self, callback):
+        self.eventWindow.set_finish_event_callback(callback)

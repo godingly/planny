@@ -47,6 +47,8 @@ class EventWindow(QDialog):
         
         self.setLayout(self.layout_)
     
+    # init
+    
     def _init_widgets(self):
         # boardLabel + listLabel
         self.boardLabel = QLabel()
@@ -81,13 +83,29 @@ class EventWindow(QDialog):
         screen_upper_right = utils_qt.getScreenUpperRight()
         geo.moveBottomRight(screen_upper_right)
         self.move(geo.topLeft()) # move(QPoint=x,y)
-    
-        
-    
+       
+    # labels
     def update_startEnd_label(self):
         """ sets StarTEndLabel to show 8:30-12:40"""
         startEndStr = utils_time.datetimes_to_hours_minutes(self.start_datetime, self.end_datetime)
         self.startEndLabel.setText(startEndStr)
+    
+    def set_name(self, name: str):
+         self.nameLabel.setText(name)
+         self.nameLabel.adjustSize()
+    
+    def get_name(self) -> str: return self.nameLabel.text()
+ 
+    def reset_labels(self):
+        self.boardLabel.setText('')
+        self.listLabel.setText('')
+        self.nameLabel.setText('')
+        self.countdownLabel.setText('')
+
+    def update_countdown_label(self):
+        countdown_str = utils_time.QTime_to_str(self.countdown_time)
+        self.countdownLabel.setText(countdown_str)
+        self.countdownLabel.adjustSize()
     
     # overriding
     def close_event(self, event):
@@ -101,13 +119,15 @@ class EventWindow(QDialog):
             geo.moveCenter(qPoint)
             self.move(geo.topLeft()) # move(QPoint=x,y)    
     
-    # overriding
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.showMinimized() 
         elif e.key() == Qt.Key_F5:
             self.refresh_callback()
+        elif e.key() == Qt.Key_F:
+            self.finish_event_callback()
     
+    # general
     def start(self, task: Task):
         """starts new event"""    
         self.timer.stop()
@@ -139,34 +159,32 @@ class EventWindow(QDialog):
         self._position()
         self.setToolTip(task.desc)
 
-    def set_name(self, name: str):
-         self.nameLabel.setText(name)
-         self.nameLabel.adjustSize()
-    
-    def get_name(self) -> str: return self.nameLabel.text()
-    
+    # time
     def set_countdown_time(self, time: datetime.time): self.countdown_time = QTime(time) # type: ignore
     def reset_coundown_time(self): self.countdown_time = QTime()
     def get_MSecs_to_start(self) -> int: 
         """ how many microseconds have passed since the start"""
         return self.mSecsPassed
-
-    def reset_labels(self):
-        self.boardLabel.setText('')
-        self.listLabel.setText('')
-        self.nameLabel.setText('')
-        self.countdownLabel.setText('')
-        # self.nextEventLabel.setText('')
-        # self.startEndLabel.setText('')
     
     def end_cur_event(self):
         self.stop_flash()
         self.reset_coundown_time()
         self.timer.stop()
         self.mSecsPassed = 0
-        self.reset_labels()
+        self.reset_labels()    
+    
+    def is_timer_ended(self) -> bool:
+        return self.countdown_time == self.zeroTime
+    
+    def change_minutes(self, minutes: int):
+        self.end_datetime += datetime.timedelta(minutes=minutes)
+        self.update_startEnd_label()
         
-
+        self.countdown_time = self.countdown_time.addSecs(minutes * 60)
+        self.update_countdown_label()
+        self.stop_flash()
+        
+    # Callbacks
     def timeout(self):
         self.countdown_time = self.countdown_time.addMSecs(-self.countdownDeltaMS)
         self.mSecsPassed += self.countdownDeltaMS
@@ -181,29 +199,15 @@ class EventWindow(QDialog):
         elif self.name == 'break' and self.countdown_time < self.breakFlashTime: # type: ignore
             self.start_flash()
             self.toggle_background_color()
-            
+    
     def set_timer_callback(self, callback): 
         self.timerCallback = callback 
 
     def set_refresh_callback(self, callback):
         self.refresh_callback = callback
-    
-    def update_countdown_label(self):
-        countdown_str = utils_time.QTime_to_str(self.countdown_time)
-        self.countdownLabel.setText(countdown_str)
-        self.countdownLabel.adjustSize()
 
-    def is_timer_ended(self) -> bool:
-        return self.countdown_time == self.zeroTime
-    
-    def change_minutes(self, minutes: int):
-        self.end_datetime += datetime.timedelta(minutes=minutes)
-        self.update_startEnd_label()
-        
-        self.countdown_time = self.countdown_time.addSecs(minutes * 60)
-        self.update_countdown_label()
-        self.stop_flash()
-        
+    def set_finish_event_callback(self, callback):
+        self.finish_event_callback = callback
     # flash
     def toggle_background_color(self):
         if self.isRedBackground:
