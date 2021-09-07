@@ -50,7 +50,7 @@ def local_to_utc(local_dt: datetime_t) -> datetime_t:
 
 def get_current_utc(round: bool=False, with_seconds: bool=False) -> datetime_t:
     """ returns current aware utc datetime """
-    current_utc_aware_dt = datetime.datetime.now(timezone.utc) 
+    current_utc_aware_dt = datetime.datetime.now(timezone.utc)
     if with_seconds:
         current_utc_aware_dt = current_utc_aware_dt.replace(microsecond=0)
     else:

@@ -19,7 +19,7 @@ PLANNY_CMD = 'planny_cmd'
 JSON_Dict = Dict[str, Any]
 
 
-def get_credentials(secret_credentials_path: str):
+def get_credentials(secret_credentials_path: str, gcal_token_path: str=""):
     """
     secret credentials at https://developers.google.com/workspace/guides/create-credentials
     """
@@ -27,8 +27,8 @@ def get_credentials(secret_credentials_path: str):
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
     # time.
-    if os.path.exists('token.json'):
-        creds = Credentials.from_authorized_user_file('token.json', SCOPES)
+    if gcal_token_path and os.path.exists(gcal_token_path):
+        creds = Credentials.from_authorized_user_file(gcal_token_path, SCOPES)
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
@@ -38,7 +38,7 @@ def get_credentials(secret_credentials_path: str):
             flow = InstalledAppFlow.from_client_secrets_file(secret_credentials_path, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
-        with open('token.json', 'w') as token:
+        with open(gcal_token_path, 'w') as token:
             token.write(creds.to_json())
     return creds #type google.oauth2.credentials.Credentials
 
@@ -48,8 +48,8 @@ def event_to_dict(event) -> JSON_Dict:
     return d
 
 class GCal:
-    def __init__(self, secret_credentials_path: str, debug: bool=False):
-        self.creds = get_credentials(secret_credentials_path)
+    def __init__(self, secret_credentials_path: str, gcal_token_path: str="", debug: bool = False):
+        self.creds = get_credentials(secret_credentials_path, gcal_token_path)
         self.service = build('calendar', 'v3', credentials=self.creds) # type googleapiclient.discovery.Resource
         self.timeZone_str = utils_time.get_local_timezone_str()
         self.debug = debug

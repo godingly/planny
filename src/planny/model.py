@@ -3,9 +3,10 @@ from datetime import timedelta
 from typing import List, Optional, Set, Tuple
 
 from planny.task import Task
+from planny.services.beeminder import Beeminder
 from planny.services.gcal import GCal
 from planny.services.trello import Trello
-from planny.services.beeminder import Beeminder
+from planny.services.toggl import Toggl
 from planny.db.tasks_db import TasksDB
 from planny.utils.utils import *
 import planny.utils.time as utils_time
@@ -21,8 +22,9 @@ class Model:
     def __init__(self, args) -> None:
         self.args = args
         self.bee = Beeminder(args.beeminder_json, args.debug)
-        self.gcal = GCal(args.gcal_credentials_json, args.debug)
+        self.gcal = GCal(args.gcal_credentials_json, args.gcal_token_path, args.debug)
         self.trello = Trello(args.trello_json)
+        self.toggl = Toggl(args.toggl_json)
         self.secs_tracked = 0 # in seconds
         self.secs_since_last_break = 0
         self.current_board : str = ''
@@ -54,7 +56,7 @@ class Model:
         else: # trello task
             board_name = cmd_name
             task = self.get_board_first_task(board_name)
-            task.start_datetime = utils_time.get_current_local()
+            task.start_datetime = utils_time.get_current_local(with_seconds=True)
             task.end_datetime = min( (task.start_datetime + timedelta(minutes=task.duration)), cmd_end_datetime)
             return task
     
@@ -89,16 +91,20 @@ class Model:
     # END EVENT 
     def end_cur_event(self, is_completed=False, force_update_track_time: bool=False):
         # update time tracking
-        time_now_aware = utils_time.get_current_local()
+        time_now_aware = utils_time.get_current_local(with_seconds=True)
         try: self.current_task.end_datetime = time_now_aware
         except AttributeError: return
         
         event_duration_in_seconds = (time_now_aware - self.current_task.start_datetime).total_seconds()
+        print(f"model::end_cur_event() adding {event_duration_in_seconds} seconds after task {self.current_task}\n")
         self.update_time_tracked(int(event_duration_in_seconds), force_update_track_time)
         
         # update trello
         if is_completed and self.current_task.name != BREAK:
             self.trello.complete_first_card(self.current_task.board)
+        # toggl
+        self.toggl.add_time_entry(self.current_task.name, self.current_task.board,
+                                self.current_task.start_datetime, self.current_task.end_datetime)
         
         if event_duration_in_seconds > 60:
             # create gcal event

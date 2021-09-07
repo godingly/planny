@@ -100,33 +100,31 @@ class Trello:
         num_completed_cards = len(list_completed_cards_res)
         return total_num_of_cards, num_completed_cards
 
-
     ######### LISTS ###########
     
-    def get_board_list_id_name(self, board_name) -> Tuple[tOrderedDict[IdList, Name], tOrderedDict[Name, IdList]]:
+    def get_lists_name_id(self, board_name) -> tOrderedDict:
         """ returns mapping between lists names and ids"""
-        board_id = self.board_name_to_id[board_name]
+        board_id = self.board_name_to_id.get(board_name, self.board_name_to_id['misc'])
         endpoint = f"boards/{board_id}/lists"
         list_of_lists_dicts  = self._call(endpoint,{'fields':'name,id'}) # [{'id':"", 'name':""}, {},...]
-        lists_id_to_name = OrderedDict()
-        lists_name_to_id = OrderedDict()
+        lists_name_id = OrderedDict()
         for d in list_of_lists_dicts:
-            lists_id_to_name[ d['id'] ] = d['name']
-            lists_name_to_id[ d['name'] ] = d['id']
-        return lists_id_to_name, lists_name_to_id
+            lists_name_id[ d['name'] ] = d['id']
+            lists_name_id[ d['id'] ] = d['name']
+        return lists_name_id
     
     def get_first_list_name_id(self, board_name) -> Tuple[Name, IdList]:
         """ returns first_list_name and first_list_id if exists, empty strings otherwise"""
-        lists_name_to_id = self.get_board_list_id_name(board_name)[1]
+        lists_name_id = self.get_lists_name_id(board_name)
         try:
-            first_list_name, first_list_id = next(iter(lists_name_to_id.items()))
+            first_list_name, first_list_id = next(iter(lists_name_id.items()))
         except StopIteration:
             return "", ""
         return first_list_name, first_list_id, 
     
     def get_list_id_from_name(self, board_name, list_name) -> IdList:
         " returns empty str if list_name doesn't exist"
-        lists_name_to_id = self.get_board_list_id_name(board_name)[1]
+        lists_name_to_id = self.get_lists_name_id(board_name)
         return lists_name_to_id.get(list_name, "")
     
     def get_list_cards(self, board_name, list_name="", list_id="") -> List[JSON_Dict]:
@@ -195,13 +193,23 @@ class Trello:
     def get_first_card(self, board_name) -> Task:
         """ returns first task on first list, or empty dict if board has no cards"""
         """ returns a dict {'id', 'name', 'pos', 'idList', 'due', 'desc', 'num_cards_in_list', 'next_event_name'}"""
-        lists_names_id = list((self.get_board_list_id_name(board_name)[1]).items()) # list of tuples [('list_name', 'list_id'), (), ..]
-        num_of_lists = len(lists_names_id)
-        if num_of_lists == 0:
-            return None # type: ignore
+
+        lists_name_id = list( self.get_lists_name_id(board_name).items() ) # list of tuples [('list_name', 'list_id'), (), ..]
+        lists_name_id = [ lists_name_id[i] for i in range(0, len(lists_name_id),2) ] # get only even items
+        num_of_lists = len(lists_name_id)
+        if num_of_lists == 0: return None # type: ignore
         
-        first_list_cards = self.get_list_cards(board_name, list_id=lists_names_id[0][1])
+        first_list_name, first_list_id = lists_name_id[0]
+        # fix case of first==COMPLETED
+        if first_list_name == COMPLETED:
+            if num_of_lists == 1:
+                return None # type: ignore
+            else:
+                first_list_name, first_list_id = lists_name_id[1]
+        first_list_cards = self.get_list_cards(board_name, list_id=first_list_id)
         num_cards_in_list = len (first_list_cards)
+        
+        # get first card
         if num_cards_in_list:
             first_list_card = parse_card_name(first_list_cards[0])
             # num_total_cards, num_completed_cards = self.get_board_total_completed_cards(board_name)
@@ -209,13 +217,13 @@ class Trello:
                         duration=first_list_card['duration'],
                         desc=first_list_card['desc'],
                         board=board_name,
-                        list=lists_names_id[0][0],
+                        list=lists_name_id[0][0],
                         num_cards_in_list=num_cards_in_list,
                         origin='trello')
             if num_cards_in_list > 1:
                 task.next_event_name = first_list_cards[1]['name']
             else:
-                task.next_event_name = f'List: {lists_names_id[1][0]}' if num_of_lists > 1 else 'board end'
+                task.next_event_name = f'List: {lists_name_id[1][0]}' if num_of_lists > 1 else 'board end'
             return task
         else:
             return None # type: ignore

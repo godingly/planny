@@ -109,7 +109,6 @@ class Ctrl:
         self.start_event(task)
     
     def start_event(self, task : Task):
-        self.end_cur_event()
         self.model.current_task = task
         self.current_board = task.board
         self.view.add_event(task)
@@ -133,5 +132,6 @@ class Ctrl:
             
         
     def refresh_callback(self):
+        self.end_cur_event()
         self.start_current_task()
 

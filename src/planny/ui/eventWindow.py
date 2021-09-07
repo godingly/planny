@@ -147,7 +147,7 @@ class EventWindow(QDialog):
         
         # set coundown
         countdown_time = utils_time.timedelta_to_datetime_time(task.end_datetime - task.start_datetime) # type: datetime.time
-        self.set_countdown_time(countdown_time)
+        self.countdown_time = QTime(countdown_time) # type: ignore
         self.update_countdown_label()
         # start timer
         self.timer.start(self.countdownDeltaMS)
@@ -159,7 +159,6 @@ class EventWindow(QDialog):
         self.setToolTip(task.desc)
 
     # time
-    def set_countdown_time(self, time: datetime.time): self.countdown_time = QTime(time) # type: ignore
     def reset_coundown_time(self): self.countdown_time = QTime()
     
     def end_cur_event(self):
