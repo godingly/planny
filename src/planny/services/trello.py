@@ -210,7 +210,8 @@ class Trello:
                         desc=first_list_card['desc'],
                         board=board_name,
                         list=lists_names_id[0][0],
-                        num_cards_in_list=num_cards_in_list,)
+                        num_cards_in_list=num_cards_in_list,
+                        origin='trello')
             if num_cards_in_list > 1:
                 task.next_event_name = first_list_cards[1]['name']
             else:

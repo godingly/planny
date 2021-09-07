@@ -25,6 +25,7 @@ class Model:
         self.trello = Trello(args.trello_json)
         self.secs_tracked = 0 # in seconds
         self.secs_since_last_break = 0
+        self.current_board : str = ''
         self.current_task : Task
     
     # CURRENT
@@ -45,6 +46,7 @@ class Model:
             return task
         
         elif cmd_name == BREAK or self.secs_since_last_break > SECS_BTWN_BREAKS:
+            print(f"secs_since_last_break {self.secs_since_last_break}")
             self.secs_since_last_break = 0
             return Task(name="break", start_datetime = cmd_start_datetime, end_datetime = cmd_end_datetime,
                         board="break", origin="break")

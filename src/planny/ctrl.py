@@ -43,7 +43,8 @@ class Ctrl:
             task = Task(name=data['name'],
                         board=data.get('board', self.current_board),
                         start_datetime=data['start']['datetime'],
-                        end_datetime=data['end']['datetime'],)
+                        end_datetime=data['end']['datetime'],
+                        origin='trello')
             self.add_event(task)
 
         if type_ == Expr_Type.BREAK:
