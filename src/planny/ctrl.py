@@ -18,8 +18,8 @@ class Ctrl:
     def __init__(self, model: Model, view: PlannyWidget) -> None:
         self.view = view
         self.model = model
-        self.current_board = DEFAULT_BOARD
-        self.planny_cmd_timer = None
+        self.current_project = DEFAULT_PROJECT
+        self.planny_cmd_timer : QTimer = None # type: ignore
         self.connect_signals()
         self.start_current_task()
     
@@ -41,7 +41,7 @@ class Ctrl:
 
         if type_ == Expr_Type.EVENT:
             task = Task(name=data['name'],
-                        board=data.get('board', self.current_board),
+                        project=data.get('project', self.current_project),
                         start_datetime=data['start']['datetime'],
                         end_datetime=data['end']['datetime'],
                         origin='trello')
@@ -56,8 +56,8 @@ class Ctrl:
         elif type_ == Expr_Type.BEEMINDER:
             self.model.add_beeminder_datapoint(data)
 
-        elif type_ == Expr_Type.BOARD_START:
-            self.start_board(data['board'])
+        elif type_ == Expr_Type.PROJECT_START:
+            self.start_project(data['project'])
 
     def exit(self):
         self.model.end_cur_event(force_update_track_time=True)
@@ -69,11 +69,10 @@ class Ctrl:
         # get current task
         task = self.model.get_current_task()
         if not task: return
-        self.current_board = task.board
+        self.current_project = task.project
         # start update command timer
-        now = utils_time.get_current_local()
         td = utils_time.get_timedelta_from_now_to(task.end_datetime)
-        assert td.total_seconds() > 0, f"start_planny_cmd, now={now}, cmd_end_datetime = {task.end_datetime}, board = {self.current_board}"
+        assert td.total_seconds() > 0, f"start_planny_cmd, now={utils_time.get_current_local()}, cmd_end_datetime = {task.end_datetime}, project = {self.current_project}"
         self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.start_current_task), (td.total_seconds()+1)*1000 )
         # start event
         self.start_event(task)
@@ -81,36 +80,42 @@ class Ctrl:
     
     def start_break(self, data):
         task = Task(name='break',
-                    board=self.model.current_task.name,
+                    project=self.model.current_task.name,
                     start_datetime=data['start']['datetime'],
                     end_datetime=data['end']['datetime'],
                     origin='break',
-                    next_event_name = f"{self.current_board}:{self.model.current_task.name}")
+                    next_event_name = f"{self.current_project}:{self.model.current_task.name}")
         self.start_event(task)
 
     def finish_event(self):
         self.end_cur_event(is_completed=True)
         self.start_current_task()
     
-    def start_board(self, board_name : str):
-        self.current_board = board_name
-        self.model.start_board(board_name)
+    def start_project(self, project_name : str):
+        self.current_project = project_name
+        self.model.start_project(project_name)
         self.start_current_task()
     
     def change_minutes(self, minutes):
+        # TODO 
         self.view.change_minutes(minutes)
         self.model.change_minutes(minutes)
+        # reset single shot timer
+        if self.planny_cmd_timer:
+            self.planny_cmd_timer.stop()
+        td = utils_time.get_timedelta_from_now_to(self.model.current_task.end_datetime)
+        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.start_current_task), (td.total_seconds()+1)*1000 )
     
     def add_event(self, task: Task):
         """ add event from CLI"""
-        # add event to current board
+        # add event to current project
         self.model.add_event(task)
         # start event
         self.start_event(task)
     
     def start_event(self, task : Task):
         self.model.current_task = task
-        self.current_board = task.board
+        self.current_project = task.project
         self.view.add_event(task)
 
     def end_cur_event(self, is_completed=False):
@@ -124,10 +129,11 @@ class Ctrl:
         self.view.set_refresh_callback(self.refresh_callback)
         self.view.set_finish_event_callback(self.finish_event)
     
-    def timer_callback(self, name, board="event", amount=0):
+    def timer_callback(self, amount=0):
         print("ctrl(): timer ended")
-        if name != "break" and board not in ['events', 'chores', 'break']:
-            self.model.bee_charge(name, amount)
+        task = self.model.current_task
+        if task.name != "break" and task.project not in ['events', 'chores', 'break']:
+            self.model.bee_charge(task.name, amount)
         self.start_current_task()
             
         

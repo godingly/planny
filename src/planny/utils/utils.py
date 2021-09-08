@@ -16,7 +16,7 @@ class Expr_Type(Enum):
     EVENT = auto()
     EVENT_FINISH = auto()
     CHANGE_MINUTES = auto()
-    BOARD_START = auto()
+    PROJECT_START = auto()
     BREAK = auto()
     EXIT  = auto()
     UNKNOWN = auto()
@@ -24,7 +24,7 @@ class Expr_Type(Enum):
 
 
 EVENT_FINISH_CODES = ['f']
-DEFAULT_BOARD = 'misc'
+DEFAULT_PROJECT = 'misc'
 BREAK = 'break'
 
 

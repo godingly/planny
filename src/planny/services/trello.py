@@ -216,7 +216,7 @@ class Trello:
             task = Task(name=first_list_card['name'],
                         duration=first_list_card['duration'],
                         desc=first_list_card['desc'],
-                        board=board_name,
+                        project=board_name,
                         list=lists_name_id[0][0],
                         num_cards_in_list=num_cards_in_list,
                         origin='trello')

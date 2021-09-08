@@ -29,11 +29,11 @@ JSON_Dict = Dict[str, Any]
 TimeEntryDict = Dict[str, Any]
 EXERCISE = 'exercise'
 
-def board_to_project(board_name):
+def get_project_name(project_name):
     d = {
         'elliptical': EXERCISE, 'treadmill': EXERCISE, 'run': EXERCISE,'walk': EXERCISE,
     }
-    return d.get(board_name, board_name)
+    return d.get(project_name, project_name)
 
 class Toggl:
     def __init__(self, json_path):
@@ -63,11 +63,11 @@ class Toggl:
          
     def add_time_entry(self, description: str, proj_name: str,
                       start_datetime: datetime.datetime, end_datetime: datetime.datetime):
-        proj_name = board_to_project(proj_name)
+        proj_name = get_project_name(proj_name)
         
         endpoint = 'time_entries'
         duration = int((end_datetime - start_datetime).total_seconds())
-        proj_id = self.proj_name_id_dict.get(proj_name, 'misc')
+        proj_id = self.proj_name_id_dict.get(proj_name, self.proj_name_id_dict['misc'])
         data = {'time_entry':{'pid':proj_id, 'start':start_datetime.isoformat(), 'end':end_datetime.isoformat(),
                 'duration':duration, 'created_with':'planny', 'description':description}}
         res = self._call(endpoint, data=data, method="POST")
@@ -93,7 +93,7 @@ class Toggl:
             raise Exception(f'_call(), unknown method: {method}')
         
         if not result.status_code == requests.codes.ok:
-            raise Exception(f'Trello API failed with code {result.status_code}: {result.text}, {method} {url}')
+            raise Exception(f'Toggl API failed with code {result.status_code}: {result.text}, {method} {url}, {data}')
 
         return result.json()
 

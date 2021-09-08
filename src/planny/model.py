@@ -27,23 +27,23 @@ class Model:
         self.toggl = Toggl(args.toggl_json)
         self.secs_tracked = 0 # in seconds
         self.secs_since_last_break = 0
-        self.current_board : str = ''
+        self.current_project : str = ''
         self.current_task : Task
     
     # CURRENT
     def get_current_task(self) -> Task:
-        """ returns cmd_end_datetime + Task of the board specified in Calendar planny_cmd"""
+        """ returns cmd_end_datetime + Task of the project specified in Calendar planny_cmd"""
         cmd_name, cmd_start_datetime, cmd_end_datetime = self.get_current_planny_cmd()
         if not cmd_name: return None # type: ignore
         
         if cmd_name in CHORES:
             self.secs_since_last_break = 0
             return Task(name=cmd_name, start_datetime = cmd_start_datetime, end_datetime = cmd_end_datetime,
-                        board="chores", origin="chores")
+                        project="chores", origin="chores")
                     
         elif cmd_name.startswith('event '):
             event_name = cmd_name[len('event '):]
-            task = Task(name=event_name, board="events",
+            task = Task(name=event_name, project="events",
                         start_datetime = cmd_start_datetime, end_datetime = cmd_end_datetime)
             return task
         
@@ -51,42 +51,41 @@ class Model:
             print(f"secs_since_last_break {self.secs_since_last_break}")
             self.secs_since_last_break = 0
             return Task(name="break", start_datetime = cmd_start_datetime, end_datetime = cmd_end_datetime,
-                        board="break", origin="break")
+                        project="break", origin="break")
         
         else: # trello task
             board_name = cmd_name
-            task = self.get_board_first_task(board_name)
+            task = self.trello.get_first_card(board_name)
             task.start_datetime = utils_time.get_current_local(with_seconds=True)
             task.end_datetime = min( (task.start_datetime + timedelta(minutes=task.duration)), cmd_end_datetime)
             return task
     
     def get_current_planny_cmd(self) -> Tuple[CmdName, Datetime, Datetime]:
         """ returns the current planny cmd from Google Calendar. 
-            Returns board_name, start and end datetimes"""
+            Returns project_name, start and end datetimes"""
         current_cmd_dict = self.gcal.get_current_planny_cmd() #  {'id', 'summary', 'start':{'dateTime'}, 'end':{'dateTime'}
         if current_cmd_dict:
             cmd_name = current_cmd_dict['summary']
-            start_datetime = datetime.datetime.fromisoformat( current_cmd_dict['start']['dateTime'] )
+            # start_datetime = datetime.datetime.fromisoformat( current_cmd_dict['start']['dateTime'] )
+            start_datetime = utils_time.get_current_local(with_seconds=True)
             end_datetime = datetime.datetime.fromisoformat( current_cmd_dict['end']['dateTime'] )
             return cmd_name, start_datetime, end_datetime
         else:
             return "", None, None # type: ignore
-    
-    def get_board_first_task(self, board_name: str) -> Task: return self.trello.get_first_card(board_name)
 
     def change_minutes(self, minutes: int):
         td = timedelta(minutes=minutes)
         self.current_task.end_datetime += td
     
     def add_event(self, task: Task):
-        self.trello.prepend_card_to_board(task.board, task.name)
+        self.trello.prepend_card_to_board(task.project, task.name)
     
-    # BOARDS
-    def start_board(self, board_name : str):
+    # Projects
+    def start_project(self, project_name : str):
         self.gcal.delete_current_planny_cmd()
         start_datetime = utils_time.get_current_local()
         end_datetime = start_datetime + timedelta(hours=1)
-        self.gcal.add_planny_cmd_event(board_name, start_datetime, end_datetime)
+        self.gcal.add_planny_cmd_event(project_name, start_datetime, end_datetime)
     
     # END EVENT 
     def end_cur_event(self, is_completed=False, force_update_track_time: bool=False):
@@ -101,14 +100,14 @@ class Model:
         
         # update trello
         if is_completed and self.current_task.name != BREAK:
-            self.trello.complete_first_card(self.current_task.board)
+            self.trello.complete_first_card(self.current_task.project)
         # toggl
-        self.toggl.add_time_entry(self.current_task.name, self.current_task.board,
+        self.toggl.add_time_entry(self.current_task.name, self.current_task.project,
                                 self.current_task.start_datetime, self.current_task.end_datetime)
         
         if event_duration_in_seconds > 60:
             # create gcal event
-            self.gcal.add_event(summary=f"{self.current_task.board}:{self.current_task.name}",
+            self.gcal.add_event(summary=f"{self.current_task.project}:{self.current_task.name}",
                                 start=self.current_task.start_datetime,
                                 end=self.current_task.end_datetime,)
 

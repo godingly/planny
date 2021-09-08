@@ -8,7 +8,7 @@ class Task:
     name: str
     desc: str = ''
     duration: int = 20
-    board: str = "Misc"
+    project: str = "Misc"
     list: str = "misc"
     start_datetime : datetime = None # type: ignore
     end_datetime : datetime = None # type: ignore

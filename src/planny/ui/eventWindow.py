@@ -49,11 +49,11 @@ class EventWindow(QDialog):
     # init
     
     def _init_widgets(self):
-        # boardLabel + listLabel
-        self.boardLabel = QLabel()
+        # projectLabel + listLabel
+        self.projectLabel = QLabel()
         self.listLabel = QLabel()
-        utils_qt.setFont(self.boardLabel, 20, isBold=True) # _, font size
-        self.layout_.addWidget(self.boardLabel,0,0)
+        utils_qt.setFont(self.projectLabel, 20, isBold=True) # _, font size
+        self.layout_.addWidget(self.projectLabel,0,0)
         self.layout_.addWidget(self.listLabel,0,1)
         
         # add line between
@@ -96,10 +96,12 @@ class EventWindow(QDialog):
     def get_name(self) -> str: return self.nameLabel.text()
  
     def reset_labels(self):
-        self.boardLabel.setText('')
+        self.projectLabel.setText('')
         self.listLabel.setText('')
         self.nameLabel.setText('')
         self.countdownLabel.setText('')
+        self.startEndLabel.setText('')
+        self.nextEventLabel.setText('')
 
     def update_countdown_label(self):
         countdown_str = utils_time.QTime_to_str(self.countdown_time)
@@ -133,9 +135,9 @@ class EventWindow(QDialog):
         
         # set labels
         self.setWindowTitle(task.name)
-        self.boardLabel.setText(task.board.capitalize())
+        self.projectLabel.setText(task.project.capitalize())
         self.listLabel.setText(task.list)
-        self.boardLabel.adjustSize(); self.listLabel.adjustSize()
+        self.projectLabel.adjustSize(); self.listLabel.adjustSize()
         self.nextEventLabel.setText(task.next_event_name); self.nextEventLabel.adjustSize()
         self.name = task.name
         self.set_name(task.name)
@@ -185,7 +187,7 @@ class EventWindow(QDialog):
         if self.is_timer_ended():
             print(f'timer for {self.name} ended!!!')
             self.timer.stop()
-            self.timerCallback(self.name, self.boardLabel.text())
+            self.timer_callback()
         elif self.name != 'break' and self.countdown_time < self.flashTime: # type: ignore
             self.start_flash()
             self.toggle_background_color()
@@ -194,7 +196,7 @@ class EventWindow(QDialog):
             self.toggle_background_color()
     
     def set_timer_callback(self, callback): 
-        self.timerCallback = callback 
+        self.timer_callback = callback 
 
     def set_refresh_callback(self, callback):
         self.refresh_callback = callback

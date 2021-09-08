@@ -24,14 +24,14 @@ DAY_SHORT_FORM = r'\b(sun|mon|tue|wed|thu|fri|sat)\b'
 DAY_LONG_FORM = r'\b(sunday|monday|tueday|wednesday|thursday|friday|saturday)\b'
 # DAY_PAT = r'\b(?P<day>(mon|tues|wed(nes)?|thur(s)?|fri|sat(ur)?|sun)(day)?)\b'
 
-BOARD_PAT = r"-b\s+(?P<board>\w+)"
+PROJECT_PAT = r"-p\s+(?P<project>\w+)"
 
 # PREFIX
 BEE_PREFIX = 'bee '
 TASK_PREFIX = 'task '
 EVENT_PREFIX = 'event '
 BREAK_PREFIX = 'break'
-BOARD_START_PREFIX = 'start '
+PROJECT_START_PREFIX = 'start '
 REFRESH = 'refresh'
 
 def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
@@ -58,9 +58,9 @@ def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     elif s[0] in ['+', '-']:
         type_, data = parse_change_minutes(s)
 
-    elif s.startswith(BOARD_START_PREFIX):
-        board = s[len(BOARD_START_PREFIX):].strip()
-        type_, data = Expr_Type.BOARD_START, {'board':board}
+    elif s.startswith(PROJECT_START_PREFIX):
+        project = s[len(PROJECT_START_PREFIX):].strip()
+        type_, data = Expr_Type.PROJECT_START, {'project':project}
     
     else:
         type_, data = Expr_Type.UNKNOWN, {}
@@ -129,15 +129,15 @@ def parse_datetime(s: str) -> Tuple[str, JSON_Dict]:
     return snew, d
 
 def parse_event(s: str) -> Tuple[Expr_Type, JSON_Dict]:
-    "name [-b board] [20m] or [12:00-13] [Wed|Wednesday|1/7|1/7/23]"
+    "name [-p project] [20m] or [12:00-13] [Wed|Wednesday|1/7|1/7/23]"
     # consume 20m / (12:00-13)
     snew, d = parse_datetime(s)
     if not d:
         return Expr_Type.UNKNOWN, {}
 
-    board_match, snew = search_and_consume(BOARD_PAT, snew)
-    if board_match:
-        d['board'] = board_match.group('board')
+    project_match, snew = search_and_consume(PROJECT_PAT, snew)
+    if project_match:
+        d['project'] = project_match.group('project')
     d['name'] = snew.strip()
     return Expr_Type.EVENT, d 
 
