@@ -19,9 +19,6 @@ STAGE1 = 'Stage 1'
 COMPLETED = 'Completed'
 
 
-
-
-
 IdList = str
 IdTask = str
 Name = str
@@ -145,7 +142,6 @@ class Trello:
         endpoint = f"boards/{board_id}/lists"
         res = self._call(endpoint,data=data, method="POST")
         new_list = {'id': res['id'], 'pos': res['pos']}
-        self.board_name_to_id[list_name] = res['id']
         return new_list
     
     def prepend_list(self,board_name, list_name) -> JSON_Dict: return self.add_list(board_name, list_name, pos="top")
@@ -182,28 +178,28 @@ class Trello:
         cards = self._call(endpoint, fields)
         return cards
 
-    def get_first_list_cards(self, board_name):
-        """ returns a list of dicts + first_list_name, each dict a card,
+    def get_first_list_cards(self, board_name) -> Tuple[List[JSON_Dict], str, str]:
+        """ returns a list of dicts + first_list_name + id, each dict a card,
         where card={'id', 'name', 'pos', 'idList', 'due', 'desc'}"""
         first_list_name, first_list_id = self.get_first_list_name_id(board_name)
         if not first_list_id:
-            return []
-        return self.get_list_cards(board_name, list_id=first_list_id), first_list_name
+            return [], "", ""
+        return self.get_list_cards(board_name, list_id=first_list_id), first_list_name, first_list_id
    
-    def get_first_card(self, board_name) -> Task:
-        """ returns first task on first list, or empty dict if board has no cards"""
+    def get_first_card(self, board_name) -> Tuple[Task, str]:
+        """ returns first task on first list, or empty dict if board has no cards. plus returns card id"""
         """ returns a dict {'id', 'name', 'pos', 'idList', 'due', 'desc', 'num_cards_in_list', 'next_event_name'}"""
 
         lists_name_id = list( self.get_lists_name_id(board_name).items() ) # list of tuples [('list_name', 'list_id'), (), ..]
         lists_name_id = [ lists_name_id[i] for i in range(0, len(lists_name_id),2) ] # get only even items
         num_of_lists = len(lists_name_id)
-        if num_of_lists == 0: return None # type: ignore
+        if num_of_lists == 0: return None, "" # type: ignore
         
         first_list_name, first_list_id = lists_name_id[0]
         # fix case of first==COMPLETED
         if first_list_name == COMPLETED:
             if num_of_lists == 1:
-                return None # type: ignore
+                return None, "" # type: ignore
             else:
                 first_list_name, first_list_id = lists_name_id[1]
         first_list_cards = self.get_list_cards(board_name, list_id=first_list_id)
@@ -215,7 +211,7 @@ class Trello:
             # num_total_cards, num_completed_cards = self.get_board_total_completed_cards(board_name)
             task = Task(name=first_list_card['name'],
                         duration=first_list_card['duration'],
-                        desc=first_list_card['desc'],
+                        description=first_list_card['desc'],
                         project=board_name,
                         list=lists_name_id[0][0],
                         num_cards_in_list=num_cards_in_list,
@@ -224,25 +220,48 @@ class Trello:
                 task.next_event_name = first_list_cards[1]['name']
             else:
                 task.next_event_name = f'List: {lists_name_id[1][0]}' if num_of_lists > 1 else 'board end'
-            return task
+            return task, first_list_card['id']
         else:
-            return None # type: ignore
+            return None, "" # type: ignore
     
-    def add_card(self, board_name, list_name, name, pos="top") -> JSON_Dict:
+    def add_card(self, board_name, list_name, name, desc='', pos="top") -> JSON_Dict:
         """ add cards to list in board. creates list if one doesn't exist"""
         list_id = self.add_list_if_needed(board_name, list_name)
         return self.add_card_by_list_id(list_id, name, pos)
 
-    def add_card_by_list_id(self, list_id, name, pos="top") -> JSON_Dict:
+    def add_card_by_list_id(self, list_id, name, desc='', pos="top") -> JSON_Dict:
         endpoint = "cards"
         data = {'name':name, 'pos': pos, 'idList':list_id}
+        if desc: data['desc'] = desc
         res = self._call(endpoint, data, method="POST")
         card_dict = { key:res[key] for key in ['id', 'idList', 'idBoard']}
         return card_dict
     
-    def prepend_card(self, board_name, list_name, name): return self.add_card(board_name, list_name, name, pos="top")
-    def append_card(self, board_name, list_name, name): return self.add_card(board_name, list_name, name, pos="bottom")
+    def prepend_card(self, board_name, list_name, name): return self.add_card(board_name, list_name, name, desc='', pos="top")
+    def append_card(self, board_name, list_name, name): return self.add_card(board_name, list_name, name, desc='', pos="bottom")
 
+    def prepend_second_card_to_board(self, board_name: str, name: str, desc: str=''):
+        """ add card to first list, in second place"""
+        # get first list cards
+        first_list_cards, first_list_name, first_list_id = self.get_first_list_cards(board_name)
+        if not first_list_name: # if board has no first list
+            list_dict = self.add_list(board_name, 'misc')
+            first_list_id = list_dict['id']
+        if not first_list_cards:
+            # prepend first
+            pos = "top"
+        elif len(first_list_cards) == 1:
+            pos = "bottom"
+        else:
+            pos = (float(first_list_cards[0]['pos']) + float(first_list_cards[1]['pos'])) / 2
+
+        self.add_card_by_list_id(list_id=first_list_id, name=name, desc=desc, pos=pos)
+            
+        
+        # if len == 1: add to bottom
+        # else, add with pos between 1st and second
+        
+    
     def update_card(self, card_id, data):
         endpoint = f"cards/{card_id}"
         self._call(endpoint, data, method="PUT")
@@ -254,13 +273,13 @@ class Trello:
         return self.add_card_by_list_id(first_list_id, name, pos="top")
 
     def delete_first_card(self, board_name):
-        first_card = self.get_first_card(board_name)
+        first_card, first_card_id = self.get_first_card(board_name)
         if first_card:    
-            endpoint = f"cards/{first_card['id']}"
+            endpoint = f"cards/{first_card_id}"
             return self._call(endpoint, method="DELETE")
     
     def complete_first_card(self, board_name):
-        first_list_cards, first_list_name = self.get_first_list_cards(board_name)
+        first_list_cards, first_list_name, _ = self.get_first_list_cards(board_name)
         if not first_list_cards:
             return
         first_card_dict = first_list_cards[0]

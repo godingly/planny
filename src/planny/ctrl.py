@@ -53,6 +53,9 @@ class Ctrl:
         elif type_ == Expr_Type.CHANGE_MINUTES:
             self.change_minutes(data['minutes'])
         
+        elif type_ == Expr_Type.ADD_TASK_AFTER:
+            self.add_task_after(data)
+        
         elif type_ == Expr_Type.BEEMINDER:
             self.model.add_beeminder_datapoint(data)
 
@@ -77,7 +80,16 @@ class Ctrl:
         # start event
         self.start_event(task)
 
-    
+    def add_task_after(self, data):
+        name = data['name']
+        project_name = data.get('project', self.current_project)
+        desc = data.get('description', '')
+        if 'duration' in data:
+            name += f" {data['duration']}m"
+        self.model.add_task_after(project_name, name, desc)
+        
+
+
     def start_break(self, data):
         task = Task(name='break',
                     project=self.model.current_task.name,

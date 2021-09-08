@@ -55,7 +55,7 @@ class Model:
         
         else: # trello task
             board_name = cmd_name
-            task = self.trello.get_first_card(board_name)
+            task = self.trello.get_first_card(board_name)[0]
             task.start_datetime = utils_time.get_current_local(with_seconds=True)
             task.end_datetime = min( (task.start_datetime + timedelta(minutes=task.duration)), cmd_end_datetime)
             return task
@@ -116,6 +116,12 @@ class Model:
         self.secs_since_last_break += secs_tracked
         if self.secs_tracked > 3600 or force_update_track_time:
             self.bee.add_time_tracked(secs_tracked)
+    
+    # Trello
+    def add_task_after(self, project_name, name, desc=''):
+        self.trello.prepend_second_card_to_board(board_name=project_name,
+                                        name=name,
+                                        desc=desc,)
     
     # BEEMINDER
     def add_beeminder_datapoint(self, slug_value_dict):

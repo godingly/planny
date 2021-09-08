@@ -6,8 +6,8 @@ TASK_DEFAULT_DURATION = 20
 @dataclass
 class Task:
     name: str
-    desc: str = ''
-    duration: int = 20
+    description: str = ''
+    duration: int = TASK_DEFAULT_DURATION
     project: str = "Misc"
     list: str = "misc"
     start_datetime : datetime = None # type: ignore

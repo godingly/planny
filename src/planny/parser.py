@@ -18,13 +18,14 @@ WORD_PAT = r'\s*\w+\s+' # one word
 WORDS_PAT = rf'(?P<words>{WORD_PAT}(?:{WORD_PAT})*)' # multiple words
 
 DURATION_MIN_PAT = r'(?P<minutes>\d\d*)m(?:inutes|inute|in)?\b' # 20m, 20minutes
-HOUR_PAT = r'\d\d*(?::\d\d)?' #10, 10:30
+HOUR_PAT = r'\d{1,2}(?::\d\d)?\b' #10, 10:30
 HOURS_PAT = rf'(?P<start_time>{HOUR_PAT})-(?P<end_time>{HOUR_PAT})' # 10-12:30
 DAY_SHORT_FORM = r'\b(sun|mon|tue|wed|thu|fri|sat)\b'
 DAY_LONG_FORM = r'\b(sunday|monday|tueday|wednesday|thursday|friday|saturday)\b'
 # DAY_PAT = r'\b(?P<day>(mon|tues|wed(nes)?|thur(s)?|fri|sat(ur)?|sun)(day)?)\b'
 
 PROJECT_PAT = r"-p\s+(?P<project>\w+)"
+DESCRIPTION_PAT = r'-d (?P<desc>[\w\s]+)'
 
 # PREFIX
 BEE_PREFIX = 'bee '
@@ -56,8 +57,14 @@ def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
         type_, data = parse_event(s[len(EVENT_PREFIX):])
     
     elif s[0] in ['+', '-']:
-        type_, data = parse_change_minutes(s)
-
+        if re.match(DURATION_MIN_PAT, s[1:]):
+            type_, data = parse_change_minutes(s)
+        else: # + AJAX [20m] [-p playlist] [-d desc] 
+            _, data = parse_event(s[2:])
+            if 'start' in data: del data['start'];
+            if 'end' in data: del data['end'];
+            type_ = Expr_Type.ADD_TASK_AFTER
+    
     elif s.startswith(PROJECT_START_PREFIX):
         project = s[len(PROJECT_START_PREFIX):].strip()
         type_, data = Expr_Type.PROJECT_START, {'project':project}
@@ -73,6 +80,15 @@ def search_and_consume(pat: str, s:str) -> Tuple[Optional[Match], str]:
     if not match: return match, s
     sub_s = s[:match.start()]+s[match.end():]
     return match, sub_s
+
+def parse_description(s: str) -> Tuple[str, str]:
+    """ gets txt -d desc1 desc2 .. -p txt2
+    returns two strings: snew='txt -p txt2' , and 'desc1 desc2' """
+    description_match, snew = search_and_consume(DESCRIPTION_PAT, s)
+    if description_match:
+        return snew, description_match.group('desc').strip()
+    else:
+        return s, ""
 
 def parse_break(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     duration_match, _ = search_and_consume(DURATION_MIN_PAT, s)
@@ -132,12 +148,13 @@ def parse_event(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     "name [-p project] [20m] or [12:00-13] [Wed|Wednesday|1/7|1/7/23]"
     # consume 20m / (12:00-13)
     snew, d = parse_datetime(s)
-    if not d:
-        return Expr_Type.UNKNOWN, {}
 
     project_match, snew = search_and_consume(PROJECT_PAT, snew)
     if project_match:
         d['project'] = project_match.group('project')
+    snew = snew.strip()
+    snew, desc = parse_description(snew)
+    if desc: d['description'] = desc
     d['name'] = snew.strip()
     return Expr_Type.EVENT, d 
 

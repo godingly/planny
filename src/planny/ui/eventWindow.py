@@ -158,7 +158,7 @@ class EventWindow(QDialog):
             self.show()
         self.adjustSize()
         self._position()
-        self.setToolTip(task.desc)
+        self.setToolTip(task.description)
 
     # time
     def reset_coundown_time(self): self.countdown_time = QTime()
