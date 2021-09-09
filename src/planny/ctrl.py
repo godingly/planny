@@ -21,7 +21,7 @@ class Ctrl:
         self.current_project = DEFAULT_PROJECT
         self.planny_cmd_timer : QTimer = None # type: ignore
         self.connect_signals()
-        self.start_current_task()
+        self.start_current_cmd()
     
     def evaluate(self) -> None:
         expr = self.view.get_query()
@@ -34,7 +34,7 @@ class Ctrl:
             self.exit()
 
         elif type_ == Expr_Type.REFRESH:
-            self.start_current_task()
+            self.start_current_cmd()
         
         elif type_ == Expr_Type.EVENT_FINISH:
             self.finish_event()
@@ -66,9 +66,7 @@ class Ctrl:
         self.model.end_cur_event(force_update_track_time=True)
         exit()
     
-    def start_current_task(self):
-        if self.planny_cmd_timer:
-            self.planny_cmd_timer.stop()
+    def start_current_cmd(self):
         # get current task
         task = self.model.get_current_task()
         if not task: return
@@ -76,10 +74,16 @@ class Ctrl:
         # start update command timer
         td = utils_time.get_timedelta_from_now_to(task.end_datetime)
         assert td.total_seconds() > 0, f"start_planny_cmd, now={utils_time.get_current_local()}, cmd_end_datetime = {task.end_datetime}, project = {self.current_project}"
-        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.start_current_task), (td.total_seconds()+1)*1000 )
+        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.end_and_start_current_cmd), (td.total_seconds()+1)*1000 )
         # start event
         self.start_event(task)
 
+    def end_and_start_current_cmd(self):
+        self.planny_cmd_timer.stop()
+        self.end_cur_event()
+        self.start_current_cmd()
+
+    
     def add_task_after(self, data):
         name = data['name']
         project_name = data.get('project', self.current_project)
@@ -101,12 +105,12 @@ class Ctrl:
 
     def finish_event(self):
         self.end_cur_event(is_completed=True)
-        self.start_current_task()
+        self.start_current_cmd()
     
     def start_project(self, project_name : str):
         self.current_project = project_name
         self.model.start_project(project_name)
-        self.start_current_task()
+        self.start_current_cmd()
     
     def change_minutes(self, minutes):
         # TODO 
@@ -116,7 +120,7 @@ class Ctrl:
         if self.planny_cmd_timer:
             self.planny_cmd_timer.stop()
         td = utils_time.get_timedelta_from_now_to(self.model.current_task.end_datetime)
-        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.start_current_task), (td.total_seconds()+1)*1000 )
+        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.start_current_cmd), (td.total_seconds()+1)*1000 )
     
     def add_event(self, task: Task):
         """ add event from CLI"""
@@ -144,12 +148,12 @@ class Ctrl:
     def timer_callback(self, amount=0):
         print("ctrl(): timer ended")
         task = self.model.current_task
-        if task.name != "break" and task.project not in ['events', 'chores', 'break']:
+        if task.name != "break" and task.project.lower() not in ['events', 'chores', 'break']:
             self.model.bee_charge(task.name, amount)
-        self.start_current_task()
+        self.end_cur_event()
+        self.start_current_cmd()
             
         
     def refresh_callback(self):
-        self.end_cur_event()
-        self.start_current_task()
+        self.start_current_cmd()
 
