@@ -83,7 +83,6 @@ class Ctrl:
         self.end_cur_event()
         self.start_current_cmd()
 
-    
     def add_task_after(self, data):
         name = data['name']
         project_name = data.get('project', self.current_project)
@@ -91,8 +90,6 @@ class Ctrl:
         if 'duration' in data:
             name += f" {data['duration']}m"
         self.model.add_task_after(project_name, name, desc)
-        
-
 
     def start_break(self, data):
         task = Task(name='break',
@@ -112,7 +109,7 @@ class Ctrl:
         self.model.start_project(project_name)
         self.start_current_cmd()
     
-    def change_minutes(self, minutes):
+    def change_minutes(self, minutes: int):
         # TODO 
         self.view.change_minutes(minutes)
         self.model.change_minutes(minutes)
@@ -144,6 +141,7 @@ class Ctrl:
         self.view.set_timer_callback(self.timer_callback)
         self.view.set_refresh_callback(self.refresh_callback)
         self.view.set_finish_event_callback(self.finish_event)
+        self.view.set_change_minutes_callback(self.change_minutes)
     
     def timer_callback(self, amount=0):
         print("ctrl(): timer ended")
@@ -153,7 +151,6 @@ class Ctrl:
         self.end_cur_event()
         self.start_current_cmd()
             
-        
     def refresh_callback(self):
         self.start_current_cmd()
 

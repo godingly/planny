@@ -47,7 +47,6 @@ class EventWindow(QDialog):
         self.setLayout(self.layout_)
     
     # init
-    
     def _init_widgets(self):
         # projectLabel + listLabel
         self.projectLabel = QLabel()
@@ -127,6 +126,11 @@ class EventWindow(QDialog):
             self.refresh_callback()
         elif e.key() == Qt.Key_F:
             self.finish_event_callback()
+        elif e.key() in [Qt.Key_Equal, Qt.Key_Plus]:
+            self.change_minutes_callback(2)
+        elif e.key() in [Qt.Key_Underscore, Qt.Key_Minus]:
+            self.change_minutes_callback(-2)
+        
     
     # general
     def start(self, task: Task):
@@ -203,6 +207,9 @@ class EventWindow(QDialog):
 
     def set_finish_event_callback(self, callback):
         self.finish_event_callback = callback
+    
+    def set_change_minutes_callback(self, callback):
+        self.change_minutes_callback = callback
     # flash
     def toggle_background_color(self):
         if self.isRedBackground:

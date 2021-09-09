@@ -44,3 +44,6 @@ class PlannyWidget():
 
     def set_finish_event_callback(self, callback):
         self.eventWindow.set_finish_event_callback(callback)
+
+    def set_change_minutes_callback(self, callback):
+        self.eventWindow.set_change_minutes_callback(callback)
