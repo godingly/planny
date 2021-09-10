@@ -133,7 +133,6 @@ class GCal:
         if not event_dict:
             return
         self.delete_event(calendarId, event_dict['id'])
-
     
     ######### PLANNY_CMD #######
     def get_current_planny_cmd(self) -> JSON_Dict:
@@ -149,10 +148,6 @@ class GCal:
     
     def delete_current_planny_cmd(self):
         self.delete_current_event(PLANNY_CMD)
-
-
-
-     
 
 
 def iso_str_to_datetime(iso_str: str) -> datetime:

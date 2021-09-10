@@ -9,6 +9,7 @@ from planny.task import Task
 
 from planny.utils import qt as utils_qt
 from planny.utils import time as utils_time
+from planny.utils.utils import BREAK
 
 
 class EventWindow(QDialog):
@@ -129,7 +130,7 @@ class EventWindow(QDialog):
         elif e.key() in [Qt.Key_Equal, Qt.Key_Plus]:
             self.change_minutes_callback(2)
         elif e.key() in [Qt.Key_Underscore, Qt.Key_Minus]:
-            self.change_minutes_callback(-2)
+            self.change_minutes_callback(-0.2)
         
     
     # general
@@ -174,6 +175,7 @@ class EventWindow(QDialog):
         self.reset_labels()    
     
     def is_timer_ended(self) -> bool:
+        self.zeroTime = QTime(0,0,1)
         return self.countdown_time == self.zeroTime
     
     def change_minutes(self, minutes: int):
@@ -192,10 +194,10 @@ class EventWindow(QDialog):
             print(f'timer for {self.name} ended!!!')
             self.timer.stop()
             self.timer_callback()
-        elif self.name != 'break' and self.countdown_time < self.flashTime: # type: ignore
+        elif self.name != BREAK and self.countdown_time < self.flashTime: # type: ignore
             self.start_flash()
             self.toggle_background_color()
-        elif self.name == 'break' and self.countdown_time < self.breakFlashTime: # type: ignore
+        elif self.name == BREAK and self.countdown_time < self.breakFlashTime: # type: ignore
             self.start_flash()
             self.toggle_background_color()
     

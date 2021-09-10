@@ -68,13 +68,13 @@ class Ctrl:
     
     def start_current_cmd(self):
         # get current task
-        task = self.model.get_current_task()
+        task = self.model.get_current_cmd()
         if not task: return
         self.current_project = task.project
         # start update command timer
         td = utils_time.get_timedelta_from_now_to(task.end_datetime)
         assert td.total_seconds() > 0, f"start_planny_cmd, now={utils_time.get_current_local()}, cmd_end_datetime = {task.end_datetime}, project = {self.current_project}"
-        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.end_and_start_current_cmd), (td.total_seconds()+1)*1000 )
+        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.end_and_start_current_cmd), (td.total_seconds()+2)*1000 )
         # start event
         self.start_event(task)
 
@@ -110,7 +110,10 @@ class Ctrl:
         self.start_current_cmd()
     
     def change_minutes(self, minutes: int):
-        # TODO 
+        if self.model.is_break_time():
+            break_task = self.model.give_me_a_break()
+            self.end_cur_event()
+            self.start_event(break_task)
         self.view.change_minutes(minutes)
         self.model.change_minutes(minutes)
         # reset single shot timer
@@ -144,9 +147,9 @@ class Ctrl:
         self.view.set_change_minutes_callback(self.change_minutes)
     
     def timer_callback(self, amount=0):
-        print("ctrl(): timer ended")
+        print("ctrl::timer_callback() timer ended")
         task = self.model.current_task
-        if task.name != "break" and task.project.lower() not in ['events', 'chores', 'break']:
+        if task.name != BREAK and task.project.lower() not in ['events', 'chores', BREAK, 'tasks']:
             self.model.bee_charge(task.name, amount)
         self.end_cur_event()
         self.start_current_cmd()

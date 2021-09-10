@@ -119,10 +119,11 @@ class Beeminder:
         if not amount: amount = DEFAULT_CHARGE_AMOUNT
         data = {'amount':amount, note:'note'}
         if dryrun or self.debug or note=="break": 
+            print(f"!!! (not) charged {amount}$ for {note}")
             return
         charge = self._call(endpoint, data, method='POST')
         print(f"!!! charged {amount}$ for {note}")
-        return charge
+        # return charge
 
     def add_time_tracked(self, seconds_tracked: int):
         """ seconds_tracked - number of seconds to add"""

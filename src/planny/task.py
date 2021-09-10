@@ -17,3 +17,5 @@ class Task:
     num_total_cards: int = 0
     num_completed_cards: int = 0
     origin: str = ""
+    trello_id : str = ""
+    gantt_id : int = 0
