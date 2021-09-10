@@ -131,6 +131,8 @@ class EventWindow(QDialog):
             self.change_minutes_callback(2)
         elif e.key() in [Qt.Key_Underscore, Qt.Key_Minus]:
             self.change_minutes_callback(-0.2)
+        elif e.key() == Qt.Key_N:
+            self.play_next_callback()
         
     
     # general
@@ -212,6 +214,10 @@ class EventWindow(QDialog):
     
     def set_change_minutes_callback(self, callback):
         self.change_minutes_callback = callback
+    
+    def set_play_next_callback(self, callback):
+        self.play_next_callback = callback
+    
     # flash
     def toggle_background_color(self):
         if self.isRedBackground:

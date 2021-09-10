@@ -63,6 +63,9 @@ class Ctrl:
         elif type_ == Expr_Type.PROJECT_START:
             self.start_project(data['project'])
 
+        elif type_ == Expr_Type.NEXT:
+            self.play_next()
+
     def exit(self):
         self.model.end_cur_event(force_update_track_time=True)
         exit()
@@ -130,6 +133,14 @@ class Ctrl:
         # start event
         self.start_event(task)
     
+    def play_next(self):
+        """ if current_cmd is from trello, play 2nd card. 
+        else, look for planny_next cmd and start it as a task"""
+        task = self.model.get_second()
+        self.end_cur_event()
+        self.start_event(task)
+
+    
     def start_event(self, task : Task):
         self.model.current_task = task
         self.current_project = task.project
@@ -146,11 +157,12 @@ class Ctrl:
         self.view.set_refresh_callback(self.refresh_callback)
         self.view.set_finish_event_callback(self.finish_event)
         self.view.set_change_minutes_callback(self.change_minutes)
+        self.view.eventWindow.set_play_next_callback(self.play_next) 
     
     def timer_callback(self, amount=0):
         print("ctrl::timer_callback() timer ended")
         task = self.model.current_task
-        if task.name != BREAK and task.project.lower() not in ['events', 'chores', BREAK, 'tasks']:
+        if task.name != BREAK and task.project.lower() not in ['events', 'chores', BREAK, 'tasks', 'stam']:
             self.model.bee_charge(task.name, amount)
         self.end_cur_event()
         self.start_current_cmd()

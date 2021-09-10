@@ -34,6 +34,7 @@ EVENT_PREFIX = 'event '
 BREAK_PREFIX = 'break'
 PROJECT_START_PREFIX = 'start '
 REFRESH = 'refresh'
+NEXT_PREFIX = 'next'
 
 def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     s = s.lower()
@@ -68,6 +69,10 @@ def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     elif s.startswith(PROJECT_START_PREFIX):
         project = s[len(PROJECT_START_PREFIX):].strip()
         type_, data = Expr_Type.PROJECT_START, {'project':project}
+
+    elif s == NEXT_PREFIX or s=='n':
+        type_ = Expr_Type.NEXT
+        data = {}
 
     else:
         type_, data = parse_event(s)

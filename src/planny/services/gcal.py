@@ -143,6 +143,13 @@ class GCal:
         """ return {'id', 'summary', 'start':{'dateTime'}, 'end':{'dateTime'}} """
         return self.get_events(calendar_name=PLANNY_CMD, maxResults=1)[0]
 
+    def get_second_planny_cmd(self) -> JSON_Dict:
+        """ return event after the current one"""
+        list_events = self.get_events(calendar_name=PLANNY_CMD, maxResults=2)
+        if len(list_events) < 2:
+            return {}
+        return list_events[1]
+
     def add_planny_cmd_event(self, summary:str, start: datetime, end:datetime):
         self.add_event(summary, start, end, calendar_name=PLANNY_CMD)
     
@@ -157,9 +164,10 @@ def iso_str_to_datetime(iso_str: str) -> datetime:
 
 if __name__ == '__main__':
     credentials_path = r'C:\Users\godin\Python\planny\src\credentials\credentials_gcal_desktop_secret.json'
-    gcal = GCal(credentials_path)
-    gcal.delete_current_planny_cmd()
-    
+    gcal_token_path = r'C:\Users\godin\Python\planny\src\credentials\gcal_token.json'
+    gcal = GCal(credentials_path, gcal_token_path=gcal_token_path, debug=True)
+    res = gcal.get_second_planny_cmd()
+    print(res)
     a=3
     
 

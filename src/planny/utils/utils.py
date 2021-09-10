@@ -22,6 +22,7 @@ class Expr_Type(Enum):
     UNKNOWN = auto()
     REFRESH = auto()
     ADD_TASK_AFTER = auto()
+    NEXT = auto()
 
 
 EVENT_FINISH_CODES = ['f']

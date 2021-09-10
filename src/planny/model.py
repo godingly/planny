@@ -35,8 +35,7 @@ class Model:
         now = utils_time.get_current_local(with_seconds=True)
         if cmd_name in self.trello.board_name_to_id: # trello board
             if self.is_break_time(): return self.give_me_a_break()
-            board_name = cmd_name
-            task = self.trello.get_first_card(board_name)[0]
+            task = self.trello.get_first_card(cmd_name)
             task.start_datetime = now
             task.end_datetime = min( (now + timedelta(minutes=task.duration)), cmd_end_datetime)
             return task
@@ -48,8 +47,7 @@ class Model:
             self.reset_break()
             return Task(name=cmd_name, start_datetime = now, end_datetime = cmd_end_datetime,
                         project="tasks", origin="tasks")
-        
-        
+                
     def secs_since_last_break(self) -> int:
         """ return seconds since last break"""
         now = utils_time.get_current_local(with_seconds=True)
@@ -67,7 +65,6 @@ class Model:
         now = utils_time.get_current_local(with_seconds=True)
         return Task(name=BREAK, start_datetime = now, end_datetime = now + timedelta(minutes=BREAK_LENGTH),
                     project=BREAK, origin=BREAK)
-    
     
     def get_current_planny_cmd(self) -> Tuple[CmdName, Datetime, Datetime]:
         """ returns the current planny cmd from Google Calendar. 
@@ -88,6 +85,30 @@ class Model:
     
     def add_event(self, task: Task):
         self.trello.prepend_card_to_board(task.project, task.name)
+    
+    def get_second(self) -> Task:
+        """ if current_cmd is from trello, play 2nd card. 
+        else, look for planny_next cmd and start it as a task"""
+        cmd_name, cmd_start_datetime, cmd_end_datetime = self.get_current_planny_cmd()
+        if cmd_name in self.trello.board_name_to_id:
+            # get second card on trello board
+            if self.is_break_time():
+                return self.give_me_a_break()
+            task = self.trello.switch_first_and_second_cards(cmd_name)
+            task.start_datetime = utils_time.get_current_local(with_seconds=True)
+            task.end_datetime = min( (task.start_datetime + timedelta(minutes=task.duration)), cmd_end_datetime)
+            return task
+        else: # get next gcal event
+            second_cmd_dict = self.gcal.get_second_planny_cmd()
+            if second_cmd_dict:
+                second_cmd_name = second_cmd_dict['summary']
+                now = utils_time.get_current_local(with_seconds=True)
+                second_cmd_end_datetime = datetime.datetime.fromisoformat( second_cmd_dict['end']['dateTime'] )
+                self.reset_break()
+                return Task(name=second_cmd_name, start_datetime = now, end_datetime = second_cmd_end_datetime,
+                        project="tasks", origin="tasks")
+            else:
+                return None # type: ignore
     
     # Projects
     def start_project(self, project_name : str):
