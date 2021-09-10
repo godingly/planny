@@ -68,9 +68,9 @@ def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     elif s.startswith(PROJECT_START_PREFIX):
         project = s[len(PROJECT_START_PREFIX):].strip()
         type_, data = Expr_Type.PROJECT_START, {'project':project}
-    
+
     else:
-        type_, data = Expr_Type.UNKNOWN, {}
+        type_, data = parse_event(s)
     
     return type_, data
 

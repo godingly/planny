@@ -45,6 +45,7 @@ class Ctrl:
                         start_datetime=data['start']['datetime'],
                         end_datetime=data['end']['datetime'],
                         origin='trello')
+            self.end_cur_event()
             self.add_event(task)
 
         if type_ == Expr_Type.BREAK:
