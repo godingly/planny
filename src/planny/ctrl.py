@@ -44,7 +44,8 @@ class Ctrl:
                         project=data.get('project', self.current_project),
                         start_datetime=data['start']['datetime'],
                         end_datetime=data['end']['datetime'],
-                        origin='trello')
+                        origin='trello',
+                        next_event_name = self.model.get_current_task_name())
             self.end_cur_event()
             self.add_event(task)
 
@@ -170,5 +171,6 @@ class Ctrl:
         self.start_current_cmd()
             
     def refresh_callback(self):
+        self.end_cur_event()
         self.start_current_cmd()
 

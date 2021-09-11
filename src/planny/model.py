@@ -80,6 +80,8 @@ class Model:
         else:
             return "", None, None, "" # type: ignore
 
+    def get_current_task_name(self) -> str: return self.current_task.name if self.current_task else ''
+    
     def change_minutes(self, minutes: int):
         td = timedelta(minutes=minutes)
         self.current_task.end_datetime += td
