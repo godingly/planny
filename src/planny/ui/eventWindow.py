@@ -138,7 +138,7 @@ class EventWindow(QDialog):
     def start(self, task: Task):
         """starts new event"""    
         self.timer.stop()
-        
+        self.task = task
         # set labels
         self.setWindowTitle(task.name)
         self.projectLabel.setText(task.project.capitalize())
@@ -187,7 +187,7 @@ class EventWindow(QDialog):
         self.stop_flash()
         
     def is_event(self):
-        return self.name != BREAK and self.project.lower() not in ['tasks', 'events', 'chores', BREAK]
+        return self.name != BREAK and self.task.project.lower() not in ['tasks', 'events', 'chores', BREAK]
     
     # Callbacks
     def timeout(self):
