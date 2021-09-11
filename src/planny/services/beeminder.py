@@ -122,8 +122,11 @@ class Beeminder:
             print(f"!!! (not) charged {amount}$ for {note}")
             return
         charge = self._call(endpoint, data, method='POST')
+        with open(r'C:\Users\godin\Python\planny\src\credentials\charges.txt', 'a') as f:
+            date = datetime.now().strftime('%d-%b-%Y %H:%M')
+            f.write(f"{date}: {note}, {amount}$\n")
         print(f"!!! charged {amount}$ for {note}")
-        # return charge
+        return charge
 
     def add_time_tracked(self, seconds_tracked: int):
         """ seconds_tracked - number of seconds to add"""
@@ -168,7 +171,7 @@ def main():
     json_path = r'C:\Users\godin\Python\planny\src\credentials\beeminder.json'
     b = Beeminder(json_path, debug=True)
     res = b.add_time_tracked(seconds_tracked=200)
-    print(res)
+    # print(res)
     a=3
 
 if __name__=='__main__':

@@ -158,6 +158,7 @@ class Ctrl:
         self.view.set_finish_event_callback(self.finish_event)
         self.view.set_change_minutes_callback(self.change_minutes)
         self.view.eventWindow.set_play_next_callback(self.play_next) 
+        self.view.eventWindow.set_exit_callback(self.exit) 
     
     def timer_callback(self, amount=0):
         print("ctrl::timer_callback() timer ended")
