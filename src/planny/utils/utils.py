@@ -9,6 +9,7 @@ JSON_Dict = Dict[str, Any]
 CmdName = str
 ListName = str
 Datetime = dt.datetime
+DEFAULT_BREAK_LENGTH = 5
 
 # expression Types
 class Expr_Type(Enum):

@@ -98,7 +98,8 @@ def parse_description(s: str) -> Tuple[str, str]:
 def parse_break(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     duration_match, _ = search_and_consume(DURATION_MIN_PAT, s)
     d = defaultdict(dict)
-    duration = int(duration_match.group("minutes")) if duration_match else 5
+    duration = int(duration_match.group("minutes")) if duration_match else DEFAULT_BREAK_LENGTH
+    d['duration'] = duration # type:ignore
     d['name'] = 'break' # type: ignore
     d['start']['datetime'] = utils_time.get_current_local(round=False) 
     d['end']['datetime'] = d['start']['datetime'] + timedelta(minutes=duration)

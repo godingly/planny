@@ -50,7 +50,7 @@ class Ctrl:
             self.add_event(task)
 
         if type_ == Expr_Type.BREAK:
-            self.start_break(data)
+            self.start_break(data['duration'])
 
         elif type_ == Expr_Type.CHANGE_MINUTES:
             self.change_minutes(data['minutes'])
@@ -97,11 +97,12 @@ class Ctrl:
             name += f" {data['duration']}m"
         self.model.add_task_after(project_name, name, desc)
 
-    def start_break(self, data):
+    def start_break(self, duration=DEFAULT_BREAK_LENGTH):
+        now = utils_time.get_current_local(with_seconds=True)
         task = Task(name='break',
                     project=self.model.current_task.name,
-                    start_datetime=data['start']['datetime'],
-                    end_datetime=data['end']['datetime'],
+                    start_datetime=now,
+                    end_datetime=now + timedelta(minutes=duration),
                     origin='break',
                     next_event_name = f"{self.current_project}:{self.model.current_task.name}")
         self.start_event(task)
@@ -160,7 +161,8 @@ class Ctrl:
         self.view.set_finish_event_callback(self.finish_event)
         self.view.set_change_minutes_callback(self.change_minutes)
         self.view.eventWindow.set_play_next_callback(self.play_next) 
-        self.view.eventWindow.set_exit_callback(self.exit) 
+        self.view.eventWindow.set_exit_callback(self.exit)
+        self.view.eventWindow.set_break_callback(self.start_break)
     
     def timer_callback(self, amount=0):
         print("ctrl::timer_callback() timer ended")

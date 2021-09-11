@@ -132,6 +132,8 @@ class EventWindow(QDialog):
             self.play_next_callback()
         elif e.key() == Qt.Key_Q:
             self.exit_callback()
+        elif e.key() == Qt.Key_B:
+            self.break_callback()
         
     
     # general
@@ -211,17 +213,15 @@ class EventWindow(QDialog):
     def set_refresh_callback(self, callback):
         self.refresh_callback = callback
 
-    def set_finish_event_callback(self, callback):
-        self.finish_event_callback = callback
+    def set_finish_event_callback(self, callback): self.finish_event_callback = callback
     
-    def set_change_minutes_callback(self, callback):
-        self.change_minutes_callback = callback
+    def set_change_minutes_callback(self, callback): self.change_minutes_callback = callback
     
-    def set_play_next_callback(self, callback):
-        self.play_next_callback = callback
+    def set_play_next_callback(self, callback): self.play_next_callback = callback
     
-    def set_exit_callback(self, callback):
-        self.exit_callback = callback
+    def set_exit_callback(self, callback): self.exit_callback = callback
+    
+    def set_break_callback(self, callback): self.break_callback = callback
     
     # flash
     def toggle_background_color(self):
