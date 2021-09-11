@@ -37,10 +37,7 @@ class EventWindow(QDialog):
 
 
         # flash
-        if args.debug:
-            self.flashTime = QTime(0,0,58)
-        else:
-            self.flashTime = QTime(0,0,40)
+        self.flashTime = QTime(0,0,40)
         self.breakFlashTime = QTime(0,0,20)
         self.isFlashOn = False
         self.isRedBackground = False
@@ -130,7 +127,7 @@ class EventWindow(QDialog):
         elif e.key() in [Qt.Key_Equal, Qt.Key_Plus]:
             self.change_minutes_callback(2)
         elif e.key() in [Qt.Key_Underscore, Qt.Key_Minus]:
-            self.change_minutes_callback(-0.2)
+            self.change_minutes_callback(-2)
         elif e.key() == Qt.Key_N:
             self.play_next_callback()
         elif e.key() == Qt.Key_Q:
@@ -179,8 +176,7 @@ class EventWindow(QDialog):
         self.reset_labels()    
     
     def is_timer_ended(self) -> bool:
-        self.zeroTime = QTime(0,0,1)
-        return self.countdown_time == self.zeroTime
+        return self.countdown_time == QTime(0,0,1)
     
     def change_minutes(self, minutes: int):
         self.end_datetime += datetime.timedelta(minutes=minutes)
@@ -190,18 +186,22 @@ class EventWindow(QDialog):
         self.update_countdown_label()
         self.stop_flash()
         
+    def is_event(self):
+        return self.name != BREAK and self.project.lower() not in ['tasks', 'events', 'chores', BREAK]
+    
     # Callbacks
     def timeout(self):
         self.countdown_time = self.countdown_time.addMSecs(-self.countdownDeltaMS)
         self.update_countdown_label()
         if self.is_timer_ended():
-            print(f'timer for {self.name} ended!!!')
+            now = utils_time.get_current_local(with_seconds=True)
+            print(f'timer for {self.name} ended!!! at ', now.time())
             self.timer.stop()
             self.timer_callback()
-        elif self.name != BREAK and self.countdown_time < self.flashTime: # type: ignore
+        elif self.countdown_time < self.flashTime and self.is_event() : # type: ignore
             self.start_flash()
             self.toggle_background_color()
-        elif self.name == BREAK and self.countdown_time < self.breakFlashTime: # type: ignore
+        elif self.countdown_time < self.breakFlashTime and self.is_event() : # type: ignore
             self.start_flash()
             self.toggle_background_color()
     

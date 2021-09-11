@@ -18,6 +18,19 @@ PRIMARY = 'primary'
 PLANNY_CMD = 'planny_cmd'
 JSON_Dict = Dict[str, Any]
 
+def iso_str_to_datetime(iso_str: str) -> datetime:
+    """convert from isoformat 2021-09-02T14:00:00+03:00 to aware datetime.datetime object"""
+    return datetime.fromisoformat(iso_str)
+
+def is_current(event_dict) -> bool:
+    """ returns true if event is happening currently"""
+    start_dt = event_dict['start']['dateTime']
+    end_dt = event_dict['end']['dateTime']
+    start_dt = datetime.fromisoformat(start_dt)
+    end_dt = datetime.fromisoformat(end_dt)
+    now = utils_time.get_current_local(with_seconds=True)
+    return (start_dt <= now) and (now <= end_dt)
+
 
 def get_credentials(secret_credentials_path: str, gcal_token_path: str=""):
     """
@@ -34,7 +47,6 @@ def get_credentials(secret_credentials_path: str, gcal_token_path: str=""):
         if creds and creds.expired and creds.refresh_token:
             creds.refresh(Request())
         else:
-            # flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
             flow = InstalledAppFlow.from_client_secrets_file(secret_credentials_path, SCOPES)
             creds = flow.run_local_server(port=0)
         # Save the credentials for the next run
@@ -74,7 +86,7 @@ class GCal:
                                         timeMax=nextMinute, maxResults=1,
                                         singleEvents=True,
                                         orderBy='startTime').execute() 
-        list_of_event_dicts_res = events_result.get('items', []) # List[event]
+        list_of_event_dicts_res = events_result.get('items', []) # List[{}, {}, ]
         if not list_of_event_dicts_res:
             print(f'gcal::get_current_event({calendar_name}) - No events found ')
             return {}
@@ -136,8 +148,13 @@ class GCal:
     
     ######### PLANNY_CMD #######
     def get_current_planny_cmd(self) -> JSON_Dict:
-        """ return {'id', 'summary', 'start':{'dateTime'}, 'end':{'dateTime'}}, or empty dict """
-        return self.get_current_event(PLANNY_CMD)
+        """ return {'id', 'summary', 'start':{'dateTime'}, 'end':{'dateTime'}, 'next_event'}, or empty dict """
+        list_event_dicts = self.get_events(PLANNY_CMD, maxResults=2)
+        first_event = list_event_dicts[0]
+        if not list_event_dicts or not is_current(first_event):
+            return {}
+        first_event['next_event'] = list_event_dicts[1]['summary'] if len (list_event_dicts)>=2 else ''
+        return first_event
     
     def get_next_planny_cmd(self) -> JSON_Dict:
         """ return {'id', 'summary', 'start':{'dateTime'}, 'end':{'dateTime'}} """
@@ -156,17 +173,11 @@ class GCal:
     def delete_current_planny_cmd(self):
         self.delete_current_event(PLANNY_CMD)
 
-
-def iso_str_to_datetime(iso_str: str) -> datetime:
-    """convert from isoformat 2021-09-02T14:00:00+03:00 to aware datetime.datetime object"""
-    return datetime.fromisoformat(iso_str)
-
-
 if __name__ == '__main__':
     credentials_path = r'C:\Users\godin\Python\planny\src\credentials\credentials_gcal_desktop_secret.json'
     gcal_token_path = r'C:\Users\godin\Python\planny\src\credentials\gcal_token.json'
     gcal = GCal(credentials_path, gcal_token_path=gcal_token_path, debug=True)
-    res = gcal.get_second_planny_cmd()
+    res = gcal.get_current_planny_cmd()
     print(res)
     a=3
     

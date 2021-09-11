@@ -186,5 +186,5 @@ def get_now_plus_duration(duration_in_minutes: int, start_time: Optional[datetim
     return start_time + td
 
 if __name__=='__main__':
-    now = get_current_local()
-    a=3
+    now = get_current_local(with_seconds=True)
+    print(now.time())

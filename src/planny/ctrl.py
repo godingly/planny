@@ -78,11 +78,12 @@ class Ctrl:
         # start update command timer
         td = utils_time.get_timedelta_from_now_to(task.end_datetime)
         assert td.total_seconds() > 0, f"start_planny_cmd, now={utils_time.get_current_local()}, cmd_end_datetime = {task.end_datetime}, project = {self.current_project}"
-        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.end_and_start_current_cmd), (td.total_seconds()+2)*1000 )
+        self.planny_cmd_timer = utils_qt.startSingleShotTimer(partial(self.end_and_start_current_cmd), (td.total_seconds()+4)*1000 )
         # start event
         self.start_event(task)
 
     def end_and_start_current_cmd(self):
+        print("end_and_start_current_cmd", utils_time.get_current_local(with_seconds=True).time())
         self.planny_cmd_timer.stop()
         self.end_cur_event()
         self.start_current_cmd()

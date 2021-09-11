@@ -30,23 +30,23 @@ class Model:
     # CURRENT
     def get_current_cmd(self) -> Task:
         """ returns cmd_end_datetime + Task of the project specified in Calendar planny_cmd"""
-        cmd_name, cmd_start_datetime, cmd_end_datetime = self.get_current_planny_cmd()
+        cmd_name, cmd_start_datetime, cmd_end_datetime, next_cmd = self.get_current_planny_cmd()
         if not cmd_name: return None # type: ignore
         now = utils_time.get_current_local(with_seconds=True)
         if cmd_name in self.trello.board_name_to_id: # trello board
-            if self.is_break_time(): return self.give_me_a_break()
+            if self.is_break_time(): return self.give_me_a_break(next_event=cmd_name)
             task = self.trello.get_first_card(cmd_name)
             task.start_datetime = now
             task.end_datetime = min( (now + timedelta(minutes=task.duration)), cmd_end_datetime)
             return task
 
         elif cmd_name == BREAK or self.is_break_time():
-            return self.give_me_a_break()
+            return self.give_me_a_break(next_event=next_cmd)
             
         else:
             self.reset_break()
             return Task(name=cmd_name, start_datetime = now, end_datetime = cmd_end_datetime,
-                        project="tasks", origin="tasks")
+                        project="tasks", origin="tasks", next_event_name=next_cmd)
                 
     def secs_since_last_break(self) -> int:
         """ return seconds since last break"""
@@ -58,26 +58,27 @@ class Model:
     def reset_break(self):
         self.last_break_datetime = utils_time.get_current_local(with_seconds=True)
     
-    def give_me_a_break(self) -> Task:
+    def give_me_a_break(self, next_event='') -> Task:
         """ return a break Task"""
         print(f"model::give_me_a_break() secs_since_last_break {self.secs_since_last_break}")
         self.reset_break()
         now = utils_time.get_current_local(with_seconds=True)
         return Task(name=BREAK, start_datetime = now, end_datetime = now + timedelta(minutes=BREAK_LENGTH),
-                    project=BREAK, origin=BREAK)
+                    project=BREAK, origin=BREAK, next_event_name=next_event)
     
-    def get_current_planny_cmd(self) -> Tuple[CmdName, Datetime, Datetime]:
+    def get_current_planny_cmd(self) -> Tuple[CmdName, Datetime, Datetime, CmdName]:
         """ returns the current planny cmd from Google Calendar. 
             Returns project_name, start and end datetimes"""
-        current_cmd_dict = self.gcal.get_current_planny_cmd() #  {'id', 'summary', 'start':{'dateTime'}, 'end':{'dateTime'}
+        current_cmd_dict = self.gcal.get_current_planny_cmd() #  {'id', 'summary', 'start':{'dateTime'}, 'end':{'dateTime'}, 'next_event' }
         if current_cmd_dict:
             cmd_name = current_cmd_dict['summary']
+            next_cmd = current_cmd_dict['next_event']
             # start_datetime = datetime.datetime.fromisoformat( current_cmd_dict['start']['dateTime'] )
             start_datetime = utils_time.get_current_local(with_seconds=True)
             end_datetime = datetime.datetime.fromisoformat( current_cmd_dict['end']['dateTime'] )
-            return cmd_name, start_datetime, end_datetime
+            return cmd_name, start_datetime, end_datetime, next_cmd
         else:
-            return "", None, None # type: ignore
+            return "", None, None, "" # type: ignore
 
     def change_minutes(self, minutes: int):
         td = timedelta(minutes=minutes)
@@ -89,7 +90,7 @@ class Model:
     def get_second(self) -> Task:
         """ if current_cmd is from trello, play 2nd card. 
         else, look for planny_next cmd and start it as a task"""
-        cmd_name, cmd_start_datetime, cmd_end_datetime = self.get_current_planny_cmd()
+        cmd_name, cmd_start_datetime, cmd_end_datetime, next_cmd = self.get_current_planny_cmd()
         if cmd_name in self.trello.board_name_to_id:
             # get second card on trello board
             if self.is_break_time():
@@ -106,7 +107,7 @@ class Model:
                 second_cmd_end_datetime = datetime.datetime.fromisoformat( second_cmd_dict['end']['dateTime'] )
                 self.reset_break()
                 return Task(name=second_cmd_name, start_datetime = now, end_datetime = second_cmd_end_datetime,
-                        project="tasks", origin="tasks")
+                        project="tasks", origin="tasks", next_event_name=next_cmd)
             else:
                 return None # type: ignore
     
