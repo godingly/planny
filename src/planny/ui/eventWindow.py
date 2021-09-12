@@ -197,13 +197,13 @@ class EventWindow(QDialog):
         self.update_countdown_label()
         if self.is_timer_ended():
             now = utils_time.get_current_local(with_seconds=True)
-            print(f'timer for {self.name} ended!!! at ', now.time())
+            print(f'eventWindow::timeout() timer for {self.name} ended!!! at ', now.time())
             self.timer.stop()
             self.timer_callback()
         elif self.countdown_time < self.flashTime and self.is_event() : # type: ignore
             self.start_flash()
             self.toggle_background_color()
-        elif self.countdown_time < self.breakFlashTime and self.is_event() : # type: ignore
+        elif self.countdown_time < self.breakFlashTime and not self.is_event() : # type: ignore
             self.start_flash()
             self.toggle_background_color()
     
