@@ -150,9 +150,9 @@ class GCal:
     def get_current_planny_cmd(self) -> JSON_Dict:
         """ return {'id', 'summary', 'start':{'dateTime'}, 'end':{'dateTime'}, 'next_event'}, or empty dict """
         list_event_dicts = self.get_events(PLANNY_CMD, maxResults=2)
+        if not list_event_dicts: return {}
         first_event = list_event_dicts[0]
-        if not list_event_dicts or not is_current(first_event):
-            return {}
+        if not is_current(first_event): return {}
         first_event['next_event'] = list_event_dicts[1]['summary'] if len (list_event_dicts)>=2 else ''
         return first_event
     
