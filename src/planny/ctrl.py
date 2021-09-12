@@ -98,6 +98,7 @@ class Ctrl:
         self.model.add_task_after(project_name, name, desc)
 
     def start_break(self, duration=DEFAULT_BREAK_LENGTH):
+        self.end_cur_event()
         now = utils_time.get_current_local(with_seconds=True)
         task = Task(name='break',
                     project=self.model.current_task.name,
