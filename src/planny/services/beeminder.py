@@ -8,13 +8,13 @@ from typing import Any, Dict
 JSON_Dict = Dict[str, Any]
 
 # slugs
-MEDITATION='meditation'
+MEDITATION = 'meditation'
 SITUPS = 'situps'
 PUSHUPS = 'pushups'
-STRETCH = 'stretch'
+STRETCH = 'stretches'
 RUN = 'run'
-TRACKED = 'tracked'
-WATER='water'
+TRACK = 'track'
+WATER = 'water2'
 
 DEFAULT_CHARGE_AMOUNT = 5 # default amount of dollars to charge
 
@@ -45,14 +45,15 @@ class Beeminder:
     @staticmethod
     def name_to_slug(name: str) -> str:
         d = {
-            'pushup':PUSHUPS, 
-            'situp':SITUPS,
-            'drink':WATER,
-            'stretched':STRETCH, 'stretches':STRETCH, 'stretching':STRETCH,
-            'running':RUN, 'ran':RUN,
-            'meditated':MEDITATION, 'meditate':MEDITATION
+            'drink':WATER, 'water':WATER, 'drank':WATER, 
+            'meditated':MEDITATION, 'meditate':MEDITATION, 'meditation':MEDITATION, 'meditations':MEDITATION,
+            'pushup':PUSHUPS, 'pushups':PUSHUPS,
+            'running':RUN, 'ran':RUN, 'run':RUN,
+            'situp':SITUPS, 'situps':SITUPS, 
+            'stretched':STRETCH, 'stretches':STRETCH, 'stretching':STRETCH, 'stretch':STRETCH,
+            "tracked":TRACK, 'track':TRACK,
             }
-        return d.get(name, name)
+        return d.get(name.lower(), name)
 
     def get_user(self) -> JSON_Dict:
         endpoint = f'users/{self._username}.json'
@@ -101,7 +102,10 @@ class Beeminder:
         if comment is not None:
             data['comment'] = comment
         datapoint_dict = self._call(endpoint, data, method='POST')
-        print(f"add_datapoint(): added {value} to {slug}")
+        if datapoint_dict:
+            print(f"add_datapoint(): added {value} to {slug}")
+        else:
+            print(f'error add_datapoint({slug}, {value})')
         return datapoint_dict
 
     def update_datapoint(self, slug: str, datapoint_id: str, value: float) -> JSON_Dict:
@@ -110,10 +114,10 @@ class Beeminder:
         endpoint = f'users/{self._username}/goals/{slug}/datapoints/{datapoint_id}.json'
         data : Dict[str, Any] = {'value': value}
         datapoint_dict = self._call(endpoint, data, method='PUT')
-        print(f"beeminder::update_datapoint(): added {value} to {slug}")
+        print(f"beeminder::update_datapoint(): updated {value} at {slug}")
         return datapoint_dict
         
-    # Chage
+    # Charge
     def charge(self, note: str,amount: int = 0, dryrun: str = '') -> Optional[JSON_Dict]:
         endpoint = 'charges.json'
         if not amount: amount = DEFAULT_CHARGE_AMOUNT
@@ -135,13 +139,13 @@ class Beeminder:
         hours_tracked = seconds_tracked / 60 / 60
         
         if not self.last_track_datapoint:
-            self.last_track_datapoint = self.get_last_datapoint(TRACKED)
+            self.last_track_datapoint = self.get_last_datapoint(TRACK)
         
         # if not from today, create new one
         if self.last_track_datapoint['daystamp'] != get_today_daystamp():
-            self.last_track_datapoint = self.add_datapoint(TRACKED, hours_tracked)
+            self.last_track_datapoint = self.add_datapoint(TRACK, hours_tracked)
         else: # update
-            self.last_track_datapoint = self.update_datapoint(TRACKED, self.last_track_datapoint['id'], self.last_track_datapoint['value'] + hours_tracked)
+            self.last_track_datapoint = self.update_datapoint(TRACK, self.last_track_datapoint['id'], self.last_track_datapoint['value'] + hours_tracked)
     
     # General
     def _call(self, endpoint: str,
