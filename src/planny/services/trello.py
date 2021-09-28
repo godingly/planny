@@ -28,7 +28,8 @@ def parse_card_name(card_dict):
     # duration_match, name = search_and_consume(DURATION_MIN_PAT, card_dict['name'])
     # duration = int(duration_match.group("minutes")) if duration_match else TASK_DEFAULT_DURATION
     card_dict['name'] = snew
-    card_dict['duration'] = d['duration']
+
+    card_dict['duration'] = d.get('duration', TASK_DEFAULT_DURATION)
     return card_dict
 
 class Trello:
