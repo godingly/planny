@@ -10,7 +10,7 @@ from typing import Optional, Dict, Any, List, Tuple
 from typing import OrderedDict as tOrderedDict
 from collections import OrderedDict
 
-from planny.parser import search_and_consume, DURATION_MIN_PAT
+from planny.parser import search_and_consume, DURATION_MIN_PAT, parse_time
 from planny.task import Task, TASK_DEFAULT_DURATION
 
 JSON_Dict = Dict[str, Any]
@@ -24,10 +24,11 @@ IdTask = str
 Name = str
 
 def parse_card_name(card_dict):
-    duration_match, name = search_and_consume(DURATION_MIN_PAT, card_dict['name'])
-    duration = int(duration_match.group("minutes")) if duration_match else TASK_DEFAULT_DURATION
-    card_dict['name'] = name
-    card_dict['duration'] = duration
+    snew, d = parse_time(card_dict['name'])
+    # duration_match, name = search_and_consume(DURATION_MIN_PAT, card_dict['name'])
+    # duration = int(duration_match.group("minutes")) if duration_match else TASK_DEFAULT_DURATION
+    card_dict['name'] = snew
+    card_dict['duration'] = d['duration']
     return card_dict
 
 class Trello:

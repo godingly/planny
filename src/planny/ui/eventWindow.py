@@ -127,7 +127,7 @@ class EventWindow(QDialog):
         elif e.key() in [Qt.Key_Equal, Qt.Key_Plus]:
             self.change_minutes_callback(2)
         elif e.key() in [Qt.Key_Underscore, Qt.Key_Minus]:
-            self.change_minutes_callback(-2)
+            self.change_minutes_callback(-0.2)
         elif e.key() == Qt.Key_N:
             self.play_next_callback()
         elif e.key() == Qt.Key_Q:
@@ -180,11 +180,11 @@ class EventWindow(QDialog):
     def is_timer_ended(self) -> bool:
         return self.countdown_time == QTime(0,0,1)
     
-    def change_minutes(self, minutes: int):
+    def change_minutes(self, minutes: float):
         self.end_datetime += datetime.timedelta(minutes=minutes)
         self.update_startEnd_label()
         
-        self.countdown_time = self.countdown_time.addSecs(minutes * 60)
+        self.countdown_time = self.countdown_time.addSecs(int(minutes * 60))
         self.update_countdown_label()
         self.stop_flash()
         

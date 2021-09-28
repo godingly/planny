@@ -125,7 +125,8 @@ class Beeminder:
         if dryrun or self.debug or note=="break": 
             print(f"!!! (not) charged {amount}$ for {note}")
             return
-        charge = self._call(endpoint, data, method='POST')
+        # charge = self._call(endpoint, data, method='POST')
+        charge = None
         with open(r'C:\Users\godin\Python\planny\src\credentials\charges.txt', 'a') as f:
             date = datetime.now().strftime('%d-%b-%Y %H:%M')
             f.write(f"{date}: {note}, {amount}$\n")

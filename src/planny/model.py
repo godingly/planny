@@ -80,9 +80,13 @@ class Model:
         else:
             return "", None, None, "" # type: ignore
 
-    def get_current_task_name(self) -> str: return self.current_task.name if self.current_task else ''
+    def get_current_task_name(self) -> str:
+        try:
+            return self.current_task.name
+        except AttributeError as e:
+            return ''
     
-    def change_minutes(self, minutes: int):
+    def change_minutes(self, minutes: float):
         td = timedelta(minutes=minutes)
         self.current_task.end_datetime += td
     

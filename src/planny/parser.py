@@ -17,7 +17,8 @@ NUM_PAT = r'(?P<number>-?\d+(?:.\d+)?)' # 20.3, -13
 WORD_PAT = r'\s*\w+\s+' # one word
 WORDS_PAT = rf'(?P<words>{WORD_PAT}(?:{WORD_PAT})*)' # multiple words
 
-DURATION_MIN_PAT = r'(?P<minutes>\d\d*)m(?:inutes|inute|in)?\b' # 20m, 20minutes
+DURATION_SEC_PAT = r'(?P<seconds>\d+)s(?:econds|econd|ec)?\b' # 20s, 20seconds
+DURATION_MIN_PAT = r'(?P<minutes>\d+)m(?:inutes|inute|in)?\b' # 20m, 20minutes
 HOUR_PAT = r'\d{1,2}(?::\d\d)?\b' #10, 10:30
 HOURS_PAT = rf'(?P<start_time>{HOUR_PAT})-(?P<end_time>{HOUR_PAT})' # 10-12:30
 DAY_SHORT_FORM = r'\b(sun|mon|tue|wed|thu|fri|sat)\b'
@@ -97,21 +98,23 @@ def parse_description(s: str) -> Tuple[str, str]:
 
 def parse_break(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     duration_match, _ = search_and_consume(DURATION_MIN_PAT, s)
-    d = defaultdict(dict)
-    duration = int(duration_match.group("minutes")) if duration_match else DEFAULT_BREAK_LENGTH
-    d['duration'] = duration # type:ignore
+    snew, d= parse_datetime(s)
+    duration = float(duration_match.group("minutes")) if duration_match else DEFAULT_BREAK_LENGTH
     d['name'] = 'break' # type: ignore
-    d['start']['datetime'] = utils_time.get_current_local(round=False) 
-    d['end']['datetime'] = d['start']['datetime'] + timedelta(minutes=duration)
     return Expr_Type.BREAK, d
 
 def parse_time(s: str) -> Tuple[str, JSON_Dict]:
     """ look for 20m or 12:00-13, returns consumed string"""
     d = defaultdict(dict)
-    duration_match, snew = search_and_consume(DURATION_MIN_PAT, s)
-    if duration_match: # 20m, duration
-        d['duration'] = duration_match.group("minutes")
-    else: # maybe 12:00-13
+    duration_match_min, snew = search_and_consume(DURATION_MIN_PAT, s)
+    if duration_match_min: # 20m, duration
+        d['duration'] = float(duration_match_min.group("minutes")) # type: ignore
+    else:
+        duration_match_sec, snew = search_and_consume(DURATION_SEC_PAT, s)
+        if duration_match_sec: # 20s, duration
+            secs = float(duration_match_sec.group("seconds"))
+            d['duration'] = secs / 60 # type: ignore
+    if 'duration' not in d:
         hours_match, snew = search_and_consume(HOURS_PAT, s)
         if not hours_match: # no 12:00-13
             return s, {}
@@ -130,8 +133,8 @@ def parse_datetime(s: str) -> Tuple[str, JSON_Dict]:
     # if there's no date, then assume date=today
     # TODO add parse_date
     if 'duration' in d:
-        duration = int(d['duration']) 
-        start_datetime = utils_time.get_current_local(round=False) # type: Datetime
+        duration = float(d['duration']) 
+        start_datetime = utils_time.get_current_local(round=False, with_seconds=(duration < 1)) # type: Datetime
         end_datetime = start_datetime + timedelta(minutes=duration) # type: Datetime
         if duration > 5:
             end_datetime = utils_time.round_datetime(end_datetime)

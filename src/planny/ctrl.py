@@ -117,7 +117,7 @@ class Ctrl:
         self.model.start_project(project_name)
         self.start_current_cmd()
     
-    def change_minutes(self, minutes: int):
+    def change_minutes(self, minutes: float):
         if self.model.is_break_time():
             break_task = self.model.give_me_a_break()
             self.end_cur_event()
@@ -166,10 +166,12 @@ class Ctrl:
         self.view.eventWindow.set_break_callback(self.start_break)
     
     def timer_callback(self, amount=0):
-        print("ctrl::timer_callback() timer ended")
         task = self.model.current_task
         if task.name != BREAK and task.project.lower() not in ['events', 'chores', BREAK, 'tasks', 'stam']:
+            print(f'ctrl::timer_callback(), calling bee_charge({task.name},${task.project}, {amount}$)')
             self.model.bee_charge(task.name, amount)
+        else:
+            print(f"ctrl::timer_callback({task.name, {task.project.lower()}}) NOT calling bee_charge")
         self.end_cur_event()
         self.start_current_cmd()
             
