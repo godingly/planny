@@ -169,7 +169,7 @@ class Ctrl:
         task = self.model.current_task
         if task.name != BREAK and task.project.lower() not in ['events', 'chores', BREAK, 'tasks', 'stam']:
             print(f'ctrl::timer_callback(), calling bee_charge({task.name},${task.project}, {amount}$)')
-            self.model.bee_charge(task.name, amount)
+            self.model.bee_charge(f'{task.project}:{task.name}', amount)
         else:
             print(f"ctrl::timer_callback({task.name, {task.project.lower()}}) NOT calling bee_charge")
         self.end_cur_event()
