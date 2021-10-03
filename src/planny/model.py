@@ -141,9 +141,12 @@ class Model:
         
         if event_duration_in_seconds > 60:
             # create gcal event
-            self.gcal.add_event(summary=f"{self.current_task.project}:{self.current_task.name}",
+            summary = f'{self.current_task.name}'
+            if self.current_task.origin == 'trello':
+                summary = f'{self.current_task.project}:' + summary
+            self.gcal.add_event(summary=summary,
                                 start=self.current_task.start_datetime,
-                                end=self.current_task.end_datetime,)
+                                end=self.current_task.end_datetime)
 
     def update_time_tracked(self, secs_tracked: int, force_update_track_time: bool = False):
         self.secs_tracked += secs_tracked
