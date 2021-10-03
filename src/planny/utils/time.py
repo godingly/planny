@@ -65,7 +65,6 @@ def get_current_local(round: bool=False, with_seconds: bool=False) -> datetime_t
     current_utc_aware_dt = get_current_utc(round, with_seconds)
     return utc_to_local(current_utc_aware_dt)
 
-
 def datetime_to_iso(dt: datetime_t) -> str:
     return dt.isoformat()
 

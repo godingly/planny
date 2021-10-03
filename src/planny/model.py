@@ -12,7 +12,7 @@ from planny.utils.utils import *
 import planny.utils.time as utils_time
 import planny.utils.qt as utils_qt
 
-SECS_BTWN_BREAKS = 60 * 60 
+SECS_BTWN_BREAKS = 80 * 60 
 BREAK_LENGTH = 5
 
 class Model:
@@ -41,7 +41,7 @@ class Model:
             return task
             
         else:
-            self.reset_break()
+            self.reset_break(cmd_end_datetime)
             return Task(name=cmd_name, start_datetime = now, end_datetime = cmd_end_datetime,
                         project="tasks", origin="tasks", next_event_name=next_cmd)
                 
@@ -52,14 +52,16 @@ class Model:
 
     def is_break_time(self): return self.secs_since_last_break() > SECS_BTWN_BREAKS
     
-    def reset_break(self):
-        self.last_break_datetime = utils_time.get_current_local(with_seconds=True)
+    def reset_break(self, time=None):
+        if not time:
+            time = utils_time.get_current_local(with_seconds=True)
+        self.last_break_datetime = time
     
     def give_me_a_break(self, next_event='') -> Task:
         """ return a break Task"""
         print(f"model::give_me_a_break() secs_since_last_break {self.secs_since_last_break}")
-        self.reset_break()
         now = utils_time.get_current_local(with_seconds=True)
+        self.reset_break(utils_time.get_now_plus_duration(duration_in_minutes=BREAK_LENGTH))
         return Task(name=BREAK, start_datetime = now, end_datetime = now + timedelta(minutes=BREAK_LENGTH),
                     project=BREAK, origin=BREAK, next_event_name=next_event)
     
