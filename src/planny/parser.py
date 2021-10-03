@@ -99,7 +99,7 @@ def parse_description(s: str) -> Tuple[str, str]:
 def parse_break(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     duration_match, _ = search_and_consume(DURATION_MIN_PAT, s)
     snew, d= parse_datetime(s)
-    duration = float(duration_match.group("minutes")) if duration_match else DEFAULT_BREAK_LENGTH
+    d['duration'] = float(duration_match.group("minutes")) if duration_match else DEFAULT_BREAK_LENGTH
     d['name'] = 'break' # type: ignore
     return Expr_Type.BREAK, d
 

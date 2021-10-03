@@ -39,9 +39,6 @@ class Model:
             task.start_datetime = now
             task.end_datetime = min( (now + timedelta(minutes=task.duration)), cmd_end_datetime)
             return task
-
-        elif cmd_name == BREAK or self.is_break_time():
-            return self.give_me_a_break(next_event=next_cmd)
             
         else:
             self.reset_break()
