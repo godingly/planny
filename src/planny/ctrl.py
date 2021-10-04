@@ -12,8 +12,6 @@ import planny.utils.time as utils_time
 import planny.utils.qt as utils_qt
 import planny.parser as parser
 
-
-
 class Ctrl:
     def __init__(self, model: Model, view: PlannyWidget) -> None:
         self.view = view

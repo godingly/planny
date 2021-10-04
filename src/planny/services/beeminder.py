@@ -15,6 +15,7 @@ STRETCH = 'stretches'
 RUN = 'run'
 TRACK = 'track'
 WATER = 'water2'
+WEIGHT = 'weight'
 
 DEFAULT_CHARGE_AMOUNT = 5 # default amount of dollars to charge
 
@@ -52,6 +53,7 @@ class Beeminder:
             'situp':SITUPS, 'situps':SITUPS, 
             'stretched':STRETCH, 'stretches':STRETCH, 'stretching':STRETCH, 'stretch':STRETCH,
             "tracked":TRACK, 'track':TRACK,
+            "weight": WEIGHT,
             }
         return d.get(name.lower(), name)
 
