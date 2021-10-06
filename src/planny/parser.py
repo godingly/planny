@@ -43,7 +43,7 @@ def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     if s in EVENT_FINISH_CODES:
         return Expr_Type.EVENT_FINISH, {}
     
-    elif s == 'exit':
+    elif s in ['exit', 'quit', 'q']:
         type_, data = Expr_Type.EXIT, {}
 
     elif s == REFRESH:

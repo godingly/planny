@@ -16,6 +16,7 @@ RUN = 'run'
 TRACK = 'track'
 WATER = 'water2'
 WEIGHT = 'weight'
+WEIGHT_LOGGING = 'weight_logging'
 
 DEFAULT_CHARGE_AMOUNT = 5 # default amount of dollars to charge
 
@@ -54,6 +55,7 @@ class Beeminder:
             'stretched':STRETCH, 'stretches':STRETCH, 'stretching':STRETCH, 'stretch':STRETCH,
             "tracked":TRACK, 'track':TRACK,
             "weight": WEIGHT,
+            "weight_logging": WEIGHT_LOGGING,
             }
         return d.get(name.lower(), name)
 
@@ -98,7 +100,10 @@ class Beeminder:
     
     def add_datapoint(self, slug: str, value: float, comment: Optional[str] = None) -> JSON_Dict:
         """ returns added datapoint={'timestamp':unix_timestamp, 'value', 'id', 'updated_at':unix_timestamp, 'daystamp':str}"""
+        if (slug=='weight'): 
+            self.add_datapoint(WEIGHT_LOGGING, 1)
         slug = self.name_to_slug(slug)
+
         endpoint = f'users/{self._username}/goals/{slug}/datapoints.json'
         data : Dict[str, Any] = {'value': value}
         if comment is not None:
