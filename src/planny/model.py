@@ -27,6 +27,8 @@ class Model:
         self.current_project : str = ''
         self.current_task : Task
     
+    def exit(self):
+        self.gcal.exit()
     # CURRENT
     def get_current_cmd(self) -> Task:
         """ returns cmd_end_datetime + Task of the project specified in Calendar planny_cmd"""

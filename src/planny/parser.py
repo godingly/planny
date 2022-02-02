@@ -14,7 +14,7 @@ import planny.utils.time as utils_time
 
 # REGEX PATTERNS 
 NUM_PAT = r'(?P<number>-?\d+(?:.\d+)?)' # 20.3, -13
-WORD_PAT = r'\s*\w+\s+' # one word
+WORD_PAT = r'\b\w+\b\s*' # one word
 WORDS_PAT = rf'(?P<words>{WORD_PAT}(?:{WORD_PAT})*)' # multiple words
 
 DURATION_SEC_PAT = r'(?P<seconds>\d+)s(?:econds|econd|ec)?\b' # 20s, 20seconds

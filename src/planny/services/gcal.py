@@ -5,7 +5,7 @@ if __name__=='__main__': sys.path.insert(0,r'C:\Users\godin\Python\planny\src')
 from datetime import datetime, timedelta
 import os.path
 from googleapiclient.discovery import build
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google_auth_oauthlib.flow import InstalledAppFlow, Flow
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 import planny.utils.time as utils_time
@@ -31,10 +31,33 @@ def is_current(event_dict) -> bool:
     now = utils_time.get_current_local(with_seconds=True)
     return (start_dt <= now) and (now <= end_dt)
 
+# OLD WORKING CODE
+# def get_credentials(client_secrets: str, gcal_token_path: str=""):
+#     """ secret credentials at https://developers.google.com/workspace/guides/create-credentials"""
+#     creds = None
+#     # The file token.json stores the user's access and refresh tokens, and is
+#     # created automatically when the authorization flow completes for the first
+#     # time.
+#     if gcal_token_path and os.path.exists(gcal_token_path):
+#         creds = Credentials.from_authorized_user_file(gcal_token_path, SCOPES)
+#     # If there are no (valid) credentials available, let the user log in.
+#     if not creds or not creds.valid:
+#         if creds and creds.expired and creds.refresh_token:
+#             creds.refresh(Request())
+#         else:
+#             flow = InstalledAppFlow.from_client_secrets_file(client_secrets, SCOPES)
 
-def get_credentials(secret_credentials_path: str, gcal_token_path: str=""):
+#             creds = flow.run_local_server(port=0)
+#         # Save the credentials for the next run
+#         with open(gcal_token_path, 'w') as token:
+#             token.write(creds.to_json())
+#     return creds #type google.oauth2.credentials.Credentials
+
+
+def get_credentials(client_secrets: str, gcal_token_path: str=""):
     """
-    secret credentials at https://developers.google.com/workspace/guides/create-credentials
+    https://github.com/googleapis/google-api-python-client
+    https://stackoverflow.com/questions/30637984/what-does-offline-access-in-oauth-mean/30638344
     """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
@@ -43,15 +66,32 @@ def get_credentials(secret_credentials_path: str, gcal_token_path: str=""):
     if gcal_token_path and os.path.exists(gcal_token_path):
         creds = Credentials.from_authorized_user_file(gcal_token_path, SCOPES)
     # If there are no (valid) credentials available, let the user log in.
-    if not creds or not creds.valid:
-        if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
-            flow = InstalledAppFlow.from_client_secrets_file(secret_credentials_path, SCOPES)
-            creds = flow.run_local_server(port=0)
-        # Save the credentials for the next run
+    if not creds or not creds.valid: # create creds first time
+        print("gcal::get_credentials() creds aren't valid!!")
+        flow = InstalledAppFlow.from_client_secrets_file(client_secrets, SCOPES)
+        authorization_url, state = flow.authorization_url(
+        # Enable offline access so that you can refresh an access token without
+        # re-prompting the user for permission. Recommended for web server apps.
+        access_type='offline',
+        # Enable incremental authorization. Recommended as a best practice.
+        include_granted_scopes='true')
+        creds = flow.run_local_server(port=0)
         with open(gcal_token_path, 'w') as token:
             token.write(creds.to_json())
+        return creds
+    
+    if creds and creds.expired: # refresh
+        print("gcal::get_credentials() trying to refresh")
+        creds = Credentials(token=None, 
+                            refresh_token=creds.refresh_token,
+                            id_token=creds.id_token,
+                            token_uri=creds.token_uri,
+                            client_id=creds.client_id,
+                            client_secret=creds.client_secret,
+                            scopes=creds.scopes)
+        with open(gcal_token_path, 'w') as token:
+            token.write(creds.to_json())
+    
     return creds #type google.oauth2.credentials.Credentials
 
 def event_to_dict(event) -> JSON_Dict:
@@ -60,14 +100,17 @@ def event_to_dict(event) -> JSON_Dict:
     return d
 
 class GCal:
-    def __init__(self, secret_credentials_path: str, gcal_token_path: str="", debug: bool = False):
-        self.creds = get_credentials(secret_credentials_path, gcal_token_path)
+    def __init__(self, client_secrets: str, gcal_token_path: str="", debug: bool = False):
+        self.creds = get_credentials(client_secrets, gcal_token_path)
         self.service = build('calendar', 'v3', credentials=self.creds) # type googleapiclient.discovery.Resource
         self.timeZone_str = utils_time.get_local_timezone_str()
         self.debug = debug
         self.primaryCal = 'primary'
         self.calendar_names_to_ids = self.get_calendars_names_to_ids()
 
+    def exit(self):
+        self.service.close()
+    
     def get_calendars_names_to_ids(self):
         list_of_calendar_dicts = self.service.calendarList().list().execute()['items'] # type: ignore # list
         names_to_ids = {}

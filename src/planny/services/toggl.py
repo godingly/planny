@@ -41,7 +41,7 @@ class Toggl:
             d = json.load(f)
         self.api_token = d['token']
         self.timezone = d['timezone']
-        self.base_url = 'https://www.toggl.com/api/v8'
+        self.base_url = 'https://api.track.toggl.com/api/v8'
         self.wid = 642211
         self.proj_name_id_dict = self.project_name_id_dict()
     
@@ -102,7 +102,7 @@ def main():
     end = utils_time.get_current_local()
     start = end + timedelta(minutes=-5)
     t = Toggl(json_path)
-    res = t.add_time_entry("you know", "bathroom", start, end)
+    res = t.add_time_entry("test1", "bathroom", start, end)
     print(res)
     a=3
 
