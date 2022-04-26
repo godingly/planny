@@ -177,7 +177,11 @@ class GCal:
             event = {'start': { 'dateTime': start_datetime_iso, 'timeZone': self.timeZone_str,},
                      'end': {'dateTime': end_datetime_iso, 'timeZone': self.timeZone_str,},
                      'summary':summary}    
-        event = self.service.events().insert(calendarId=calendarId, body=event).execute() # type: ignore
+        try:
+            event = self.service.events().insert(calendarId=calendarId, body=event).execute() # type: ignore    
+        except Exception as e:
+            print('An exception occurred: {}'.format(e))
+            return 0
         assert event['status'] == 'confirmed', f'event={event}, {summary}, start={start}, end={end}'
         event_id = event['id']
         return event_id
