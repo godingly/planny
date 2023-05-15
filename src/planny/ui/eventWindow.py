@@ -120,7 +120,7 @@ class EventWindow(QDialog):
     def keyPressEvent(self, e):
         if e.key() == Qt.Key_Escape:
             self.showMinimized() 
-        elif e.key() == Qt.Key_F5:
+        elif e.key() in [Qt.Key_F5, Qt.Key_R]:
             self.refresh_callback()
         elif e.key() == Qt.Key_F:
             self.finish_event_callback()

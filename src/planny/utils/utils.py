@@ -26,7 +26,7 @@ class Expr_Type(Enum):
     NEXT = auto()
 
 
-EVENT_FINISH_CODES = ['f']
+EVENT_FINISH_CODES = ['f', 'finish', 'end', 'complete']
 DEFAULT_PROJECT = 'misc'
 BREAK = 'break'
 

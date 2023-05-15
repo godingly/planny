@@ -118,8 +118,9 @@ class Trello:
         if not lists_name_id_list:
             return "", ""
         if lists_name_id_list[0][0] == COMPLETED:
-            if len (lists_name_id_list) <= 2:
-                return COMPLETED, lists_name_id_list[0][1]
+            return lists_name_id_list[2][0], lists_name_id_list[2][1]
+            # if len (lists_name_id_list) <= 2:
+            #     return COMPLETED, lists_name_id_list[0][1]
 
         return lists_name_id_list[0][0], lists_name_id_list[0][1]
     
@@ -331,11 +332,10 @@ class Trello:
 def main():
     json_path = r'C:\Users\godin\Python\planny\src\credentials\trello.json'
     t = Trello(json_path)
-    t.get_first_card(PLANNY)
-    
-    a=3
-
-    
+    for i in range(58,40, -1):
+        name = f'Pg. {i} 10min'
+        t.add_card(board_name="Analysis", list_name="Week12",name=name)
+    print('finished')
 
 if __name__=='__main__':
     main()
