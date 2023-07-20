@@ -24,6 +24,7 @@ class Expr_Type(Enum):
     REFRESH = auto()
     ADD_TASK_AFTER = auto()
     NEXT = auto()
+    ADD_TRELLO = auto()
 
 
 EVENT_FINISH_CODES = ['f', 'finish', 'end', 'complete']

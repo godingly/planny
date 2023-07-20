@@ -163,6 +163,10 @@ class Model:
                                         name=name,
                                         desc=desc,)
     
+    def trello_add_tasks(self, board_name, list_name, list_of_task_names):
+        for task_name in list_of_task_names:
+            self.trello.add_card(board_name=board_name, list_name=list_name, name=task_name)
+    
     # BEEMINDER
     def add_beeminder_datapoint(self, slug_value_dict):
         for slug,value in slug_value_dict.items():

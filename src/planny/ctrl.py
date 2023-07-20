@@ -64,10 +64,18 @@ class Ctrl:
 
         elif type_ == Expr_Type.NEXT:
             self.play_next()
+            
+        elif type_ == Expr_Type.ADD_TRELLO:
+            self.trello_add_tasks(data)
 
     def exit(self):
         self.model.end_cur_event(force_update_track_time=True)
         exit()
+    
+    def trello_add_tasks(self, data):
+        self.model.trello_add_tasks(board_name=data['board_name'],
+                                    list_name=data['list_name'],
+                                    list_of_task_names=data['task_names'])
     
     def start_current_cmd(self):
         # get current task

@@ -36,6 +36,7 @@ BREAK_PREFIX = 'break'
 PROJECT_START_PREFIX = 'start '
 REFRESH = 'refresh'
 NEXT_PREFIX = 'next'
+TRELLO = 'trello'
 
 def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
     s = s.lower()
@@ -75,10 +76,26 @@ def parse(s: str) -> Tuple[Expr_Type, JSON_Dict]:
         type_ = Expr_Type.NEXT
         data = {}
 
+    elif s.startswith(TRELLO):
+        type_, data = parse_trello(s[(len(TRELLO)+1):])
+        
     else:
         type_, data = parse_event(s)
     
     return type_, data
+
+def parse_trello(s: str) -> Tuple[Expr_Type, JSON_Dict]:
+    "board list pgs./q 19-51"
+    dict = {}
+    board_name, list_name, prefix, rng, min = re.split(r'\s+', s)
+    start, end = rng.split('-'); start=int(start); end=int(end)
+    print(start, end)
+    print(prefix)
+    dict['task_names'] = [f'{prefix} {i} {min}min' for i in range(end, start-1, -1)] 
+    dict['board_name'] = board_name
+    dict['list_name'] = list_name
+    
+    return Expr_Type.ADD_TRELLO, dict
 
 def search_and_consume(pat: str, s:str) -> Tuple[Optional[Match], str]:
     """ takes a pattern and string, and if there's a match then consumes the pattern from the string"""

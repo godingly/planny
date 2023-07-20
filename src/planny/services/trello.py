@@ -103,7 +103,7 @@ class Trello:
     
     def get_lists_name_id(self, board_name) -> tOrderedDict:
         """ returns mapping between lists names and ids"""
-        board_id = self.board_name_to_id.get(board_name, self.board_name_to_id['misc'])
+        board_id = self.board_name_to_id[board_name]
         endpoint = f"boards/{board_id}/lists"
         list_of_lists_dicts  = self._call(endpoint,{'fields':'name,id'}) # [{'id':"", 'name':""}, {},...]
         lists_name_id = OrderedDict()
@@ -332,9 +332,9 @@ class Trello:
 def main():
     json_path = r'C:\Users\godin\Python\planny\src\credentials\trello.json'
     t = Trello(json_path)
-    for i in range(58,40, -1):
-        name = f'Pg. {i} 10min'
-        t.add_card(board_name="Analysis", list_name="Week12",name=name)
+    for i in range(19,5-1, -1):
+        name = f'pg. {i} 5min'
+        t.add_card(board_name="Stats", list_name="Rethinking",name=name)
     print('finished')
 
 if __name__=='__main__':
